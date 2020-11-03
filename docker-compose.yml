@@ -1,0 +1,8 @@
+version: '3'
+services:
+  opengl:
+    build: .
+    environment:
+      - DISPLAY
+    network_mode: host
+    runtime: nvidia

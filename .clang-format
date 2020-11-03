@@ -1,0 +1,9 @@
+---
+BasedOnStyle: LLVM
+ColumnLimit: 150
+TabWidth: 2
+---
+Language: Cpp
+AlwaysBreakTemplateDeclarations: Yes
+SpaceAfterTemplateKeyword: false
+...
