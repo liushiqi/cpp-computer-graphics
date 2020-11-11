@@ -1,4 +1,4 @@
-#include <application.hpp>
+#include <base_application.hpp>
 #include <logger.hpp>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_message_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -16,14 +16,19 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_message_callback(VkDebugUtils
     type_str += "performance ";
   }
 
+  std::string message(data->pMessage);
+  if (message.back() == '\n') {
+    message.pop_back();
+  }
+
   if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-    error("Vulkan {}message: {}", type_str, data->pMessage);
+    error("Vulkan {}message from {}: {}", type_str, data->pMessageIdName, message);
   } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-    warn("Vulkan {}message: {}", type_str, data->pMessage);
+    warn("Vulkan {}message from {}: {}", type_str, data->pMessageIdName, message);
   } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-    info("Vulkan {}message: {}", type_str, data->pMessage);
+    info("Vulkan {}message from {}: {}", type_str, data->pMessageIdName, message);
   } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-    debug("Vulkan {}message: {}", type_str, data->pMessage);
+    trace("Vulkan {}message from {}: {}", type_str, data->pMessageIdName, message);
   }
   return VK_FALSE;
 }
@@ -39,7 +44,16 @@ void liu::init_context() {
     throw std::runtime_error("Vulkan not supported.");
   }
 
+  int glfw_version_major, glfw_version_minor, glfw_version_rev;
+  glfwGetVersion(&glfw_version_major, &glfw_version_minor, &glfw_version_rev);
+  info("GLFW initialization succeeded, version: {}.{}.{}", glfw_version_major, glfw_version_minor, glfw_version_rev);
+
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+}
+
+void liu::clean_context() {
+  glfwTerminate();
+  gladLoaderUnloadVulkan();
 }
 
 static VkPhysicalDevice select_device(VkInstance instance) {
@@ -65,6 +79,9 @@ static VkPhysicalDevice select_device(VkInstance instance) {
     vkGetPhysicalDeviceFeatures(device, &device_features);
     vkGetPhysicalDeviceMemoryProperties(device, &memory_props);
 
+    if (!device_features.geometryShader)
+      continue;
+
     uint64_t heap_size = 0;
     auto heaps_pointer = memory_props.memoryHeaps;
     auto heaps = std::vector<VkMemoryHeap>(heaps_pointer, heaps_pointer + memory_props.memoryHeapCount);
@@ -75,13 +92,13 @@ static VkPhysicalDevice select_device(VkInstance instance) {
       }
     }
 
-    info("Found GPU {} with heap size {}MiB", device_props.deviceName, heap_size / 1024 / 1024);
+    trace("Found GPU {} with heap size {}MiB", device_props.deviceName, heap_size / 1024 / 1024);
 
     if (device_props.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-      if (device_features.geometryShader && heap_size > discrete_memory_size)
+      if (heap_size > discrete_memory_size)
         discrete = device;
     } else if (device_props.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-      if (device_features.geometryShader && heap_size > integrated_memory_size)
+      if (heap_size > integrated_memory_size)
         integrated = device;
     } else {
       warn("Unknown device: {}", device_props.deviceName);
@@ -125,7 +142,17 @@ static std::vector<const char *> get_available_validation_layers() {
   return enabled_layers;
 }
 
-void liu::application::init_context() {
+static VkSurfaceKHR create_surface(VkInstance instance, GLFWwindow *window) {
+  VkSurfaceKHR surface;
+  if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+    fatal("Failed to create window surface.");
+    throw std::runtime_error("Failed to create window surface.");
+  }
+
+  return surface;
+}
+
+void liu::base_application::init_context() {
   if (!gladLoaderLoadVulkan(nullptr, nullptr, nullptr)) {
     fatal("GLAD load vulkan failed.");
     throw std::runtime_error("GLAD load vulkan failed.");
@@ -162,7 +189,7 @@ void liu::application::init_context() {
 
     layers = get_available_validation_layers();
 
-    instance_info.enabledLayerCount = layers.size();
+    instance_info.enabledLayerCount = static_cast<uint32_t>(layers.size());
     instance_info.ppEnabledLayerNames = layers.data();
     instance_info.pNext = &debug_info;
 
@@ -214,12 +241,15 @@ void liu::application::init_context() {
       throw std::runtime_error("Vulkan debug messenger failed to init.");
     }
   }
+
+  surface = create_surface(instance, window);
 }
 
-void liu::application::cleanup_context() {
+void liu::base_application::cleanup_context() {
   if (GLAD_VK_EXT_debug_utils && enable_validation_layers) {
     vkDestroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
   }
+  vkDestroySurfaceKHR(instance, surface, nullptr);
   vkDestroyInstance(instance, nullptr);
 
   info("Clean context finished.");

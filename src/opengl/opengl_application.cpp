@@ -1,83 +1,106 @@
-#include <application.hpp>
+#include <base_application.hpp>
 #include <glad/gl.h>
 #include <logger.hpp>
 
 void APIENTRY gl_debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, [[maybe_unused]] GLsizei length,
                                         const GLchar *message, [[maybe_unused]] const void *userParam) {
-  warn("Debug message ({}): {}", id, message);
-
+  std::string source_string;
   switch (source) {
   case GL_DEBUG_SOURCE_API:
-    warn("Source: API");
+    source_string = "API";
     break;
   case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-    warn("Source: Window System");
+    source_string = "Window System";
     break;
   case GL_DEBUG_SOURCE_SHADER_COMPILER:
-    warn("Source: Shader Compiler");
+    source_string = "Shader Compiler";
     break;
   case GL_DEBUG_SOURCE_THIRD_PARTY:
-    warn("Source: Third Party");
+    source_string = "Third Party";
     break;
   case GL_DEBUG_SOURCE_APPLICATION:
-    warn("Source: Application");
+    source_string = "Application";
     break;
   case GL_DEBUG_SOURCE_OTHER:
-    warn("Source: Other");
+    source_string = "Other";
     break;
   default:
     warn("Source: unknown");
     break;
   }
 
-  switch (type) {
-  case GL_DEBUG_TYPE_ERROR:
-    warn("Type: Error");
+  std::string severity_string;
+  switch (severity) {
+  case GL_DEBUG_SEVERITY_HIGH:
+    severity_string = "high";
     break;
-  case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-    warn("Type: Deprecated Behaviour");
+  case GL_DEBUG_SEVERITY_MEDIUM:
+    severity_string = "medium";
     break;
-  case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-    warn("Type: Undefined Behaviour");
+  case GL_DEBUG_SEVERITY_LOW:
     break;
-  case GL_DEBUG_TYPE_PORTABILITY:
-    warn("Type: Portability");
-    break;
-  case GL_DEBUG_TYPE_PERFORMANCE:
-    warn("Type: Performance");
-    break;
-  case GL_DEBUG_TYPE_MARKER:
-    warn("Type: Marker");
-    break;
-  case GL_DEBUG_TYPE_PUSH_GROUP:
-    warn("Type: Push Group");
-    break;
-  case GL_DEBUG_TYPE_POP_GROUP:
-    warn("Type: Pop Group");
-    break;
-  case GL_DEBUG_TYPE_OTHER:
-    warn("Type: Other");
+  case GL_DEBUG_SEVERITY_NOTIFICATION:
+    severity_string = "notification";
     break;
   default:
-    warn("Type: unknown");
+    severity_string = "unknown";
     break;
   }
 
-  switch (severity) {
-  case GL_DEBUG_SEVERITY_HIGH:
-    warn("Severity: high");
+  std::string type_string;
+  switch (type) {
+  case GL_DEBUG_TYPE_ERROR:
+    type_string = "Error";
     break;
-  case GL_DEBUG_SEVERITY_MEDIUM:
-    warn("Severity: medium");
+  case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+    type_string = "Deprecated Behaviour";
     break;
-  case GL_DEBUG_SEVERITY_LOW:
-    warn("Severity: low");
+  case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+    type_string = "Undefined Behaviour";
     break;
-  case GL_DEBUG_SEVERITY_NOTIFICATION:
-    warn("Severity: notification");
+  case GL_DEBUG_TYPE_PORTABILITY:
+    type_string = "Portability";
+    break;
+  case GL_DEBUG_TYPE_PERFORMANCE:
+    type_string = "Performance";
+    break;
+  case GL_DEBUG_TYPE_MARKER:
+    type_string = "Marker";
+    break;
+  case GL_DEBUG_TYPE_PUSH_GROUP:
+    type_string = "Push Group";
+    break;
+  case GL_DEBUG_TYPE_POP_GROUP:
+    type_string = "Pop Group";
+    break;
+  case GL_DEBUG_TYPE_OTHER:
+    type_string = "Other";
     break;
   default:
-    warn("Severity: unknown");
+    type_string = "unknown";
+    break;
+  }
+
+  std::string information =
+      fmt::format("OpenGL {} severity message ({}) from {} of type {}: {}", severity_string, id, source_string, type_string, message);
+  switch (type) {
+  case GL_DEBUG_TYPE_ERROR:
+    error("{}", information);
+    break;
+  case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+  case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+  case GL_DEBUG_TYPE_PORTABILITY:
+  case GL_DEBUG_TYPE_PERFORMANCE:
+    warn("{}", information);
+    break;
+  case GL_DEBUG_TYPE_MARKER:
+  case GL_DEBUG_TYPE_PUSH_GROUP:
+  case GL_DEBUG_TYPE_POP_GROUP:
+  case GL_DEBUG_TYPE_OTHER:
+    info("{}", information);
+    break;
+  default:
+    fatal("{}", information);
     break;
   }
 }
@@ -87,6 +110,10 @@ void liu::init_context() {
     fatal("GLFW initialization failed.");
     throw std::runtime_error("GLFW initialization failed.");
   }
+
+  int glfw_version_major, glfw_version_minor, glfw_version_rev;
+  glfwGetVersion(&glfw_version_major, &glfw_version_minor, &glfw_version_rev);
+  info("GLFW initialization succeeded, version: {}.{}.{}", glfw_version_major, glfw_version_minor, glfw_version_rev);
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -100,7 +127,7 @@ void liu::clean_context() {
   gladLoaderUnloadGL();
 }
 
-void liu::application::init_context() {
+void liu::base_application::init_context() {
   if (!gladLoaderLoadGL()) {
     fatal("Failed to load OpenGL.");
     exit(1);
@@ -114,4 +141,4 @@ void liu::application::init_context() {
   }
 }
 
-void liu::application::cleanup_context() { info("Clean context finished."); }
+void liu::base_application::cleanup_context() { info("Clean context finished."); }

@@ -42,11 +42,15 @@
   do {                                                                                                                                               \
     SPDLOG_ERROR(__VA_ARGS__);                                                                                                                       \
   } while (false)
-#define fatal(...)                                                                                                                                \
+#define fatal(...)                                                                                                                                   \
   do {                                                                                                                                               \
     SPDLOG_CRITICAL(__VA_ARGS__);                                                                                                                    \
   } while (false)
 
 namespace liu {
+
 void init_logger();
-}
+
+void clean_logger();
+
+} // namespace liu

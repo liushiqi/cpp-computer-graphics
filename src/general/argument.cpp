@@ -8,7 +8,7 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
-#include <application.hpp>
+#include <base_application.hpp>
 #include <cxxopts.hpp>
 #include <filesystem>
 #include <iostream>
@@ -20,7 +20,7 @@
 #endif
 
 std::filesystem::path liu::parse_argument(int argc, const char *argv[]) {
-  std::string assets_path;
+  std::filesystem::path assets_path;
   cxxopts::Options options("computer-graphics", "A program for computer graphics class");
   try {
     options.add_options()("h,help", "Display this help message.")("a,assets", "the path to assets directory.",
@@ -37,5 +37,5 @@ std::filesystem::path liu::parse_argument(int argc, const char *argv[]) {
     std::cerr << "arguments parse failed: " << error.what() << std::endl << options.help();
     exit(1);
   }
-  return std::filesystem::path(assets_path);
+  return assets_path;
 }
