@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <vector>
 
 namespace liu {
 
@@ -23,6 +24,12 @@ class callbacks_t;
 
 class base_application {
 public:
+#ifdef NDEBUG
+  static constexpr bool enable_validation_layers = false;
+#else
+  static constexpr bool enable_validation_layers = true;
+#endif
+
   base_application(const std::filesystem::path &assets_path, int width, int height, const std::string &title,
                    std::unique_ptr<callbacks_t> callbacks = std::make_unique<callbacks_t>());
 
@@ -46,14 +53,13 @@ private:
   VkPhysicalDevice physical_device = nullptr;
   VkDebugUtilsMessengerEXT debug_messenger = nullptr;
   VkSurfaceKHR surface = nullptr;
+  VkDevice device = nullptr;
   std::optional<uint32_t> graphics_family = std::nullopt, present_family = std::nullopt;
+  VkQueue graphics_queue = nullptr, present_queue = nullptr;
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> present_modes;
 #else
-#endif
-
-#ifdef NDEBUG
-  static constexpr bool enable_validation_layers = false;
-#else
-  static constexpr bool enable_validation_layers = true;
 #endif
 
   void create_window(int width, int height);

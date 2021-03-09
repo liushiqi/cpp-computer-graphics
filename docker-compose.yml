@@ -6,3 +6,14 @@ services:
       - DISPLAY
     network_mode: host
     runtime: nvidia
+  vulkan:
+    build:
+      context: .
+      args:
+        ENABLE_VULKAN: "TRUE"
+    environment:
+      - DISPLAY
+    volumes:
+      - /usr/share/vulkan/icd.d:/usr/share/vulkan/icd.d
+    network_mode: host
+    runtime: nvidia
