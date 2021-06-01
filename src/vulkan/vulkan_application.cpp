@@ -209,22 +209,6 @@ static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR
   uint64_t discrete_memory_size = 0, integrated_memory_size = 0;
 
   for (const auto &device : devices) {
-    const auto [graphics_family, present_family] = find_queue_indices(device, surface);
-    if (!(graphics_family && present_family))
-      continue;
-
-    uint32_t extension_count;
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
-    std::vector<VkExtensionProperties> available_extensions(extension_count);
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
-    std::set<const char *, raw_str_less> required_extensions(std::begin(device_extensions), std::end(device_extensions));
-    for (const auto &extension : available_extensions) {
-      required_extensions.erase(extension.extensionName);
-    }
-    if (!required_extensions.empty()) {
-      continue;
-    }
-
     VkPhysicalDeviceProperties device_props;
     vkGetPhysicalDeviceProperties(device, &device_props);
 

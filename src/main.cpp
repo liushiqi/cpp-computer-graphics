@@ -6,8 +6,6 @@
 
 class main_callbacks_t : public liu::callbacks_t {};
 
-class main_callbacks_t : public liu::callbacks_t {};
-
 class main_application : public liu::base_application {
 public:
   explicit main_application(const std::filesystem::path &assets_path)
