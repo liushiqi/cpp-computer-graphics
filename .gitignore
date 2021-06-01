@@ -267,8 +267,8 @@ dlldata.c
 BenchmarkDotNet.Artifacts/
 
 # .NET Core
-project.lock.json
-project.fragment.lock.json
+project.close_lock.json
+project.fragment.close_lock.json
 artifacts/
 
 # StyleCop

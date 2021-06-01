@@ -1,9 +1,10 @@
 #include <base_application.hpp>
 #include <logger.hpp>
 #include <thread>
+#include <unistd.h>
 
-void liu::base_application::create_window(int width, int height) {
-  window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+void liu::base_application::create_window() {
+  window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.c_str(), nullptr, nullptr);
   if (!window) {
     fatal("GLFW create window failed.");
     throw std::runtime_error("GLFW create window failed.");
@@ -49,13 +50,17 @@ void liu::base_application::register_callbacks() {
   info("Callbacks register succeeded.");
 }
 
-liu::base_application::base_application(const std::filesystem::path &assets_path, int width, int height, const std::string &title,
+liu::base_application::base_application(const std::filesystem::path &assets_path, uint32_t width, uint32_t height,
+                                        const std::optional<uint32_t> &max_frame_rate, const std::string &title,
                                         std::unique_ptr<callbacks_t> callbacks)
-    : assets_base_path(assets_path), callbacks(std::move(callbacks)), title(title), window(nullptr), should_close(false) {
-  create_window(width, height);
+    : assets_base_path(assets_path), max_frame_rate(max_frame_rate), callbacks(std::move(callbacks)), title(title), window(nullptr), width(width),
+      height(height), should_close(false) {
+  create_window();
   init_context();
   register_callbacks();
 }
+
+volatile int id;
 
 void liu::base_application::run() {
   auto second_begin = std::chrono::system_clock::now();
@@ -64,22 +69,22 @@ void liu::base_application::run() {
     using namespace std::chrono_literals;
     auto start = std::chrono::system_clock::now();
 
-    {
-      std::lock_guard<std::mutex> guard(lock);
-      if (should_close) {
-        break;
-      }
-
-      main_loop();
+    if (should_close) {
+      break;
     }
+
+    main_loop();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
 
     frame_count += 1;
 
-    if (auto duration = (std::chrono::system_clock::now() - start); duration < (1.0s / 60)) {
-      std::this_thread::sleep_for(1.0s / 60 - duration);
+    if (max_frame_rate != std::nullopt) {
+      uint32_t real_max_frame_rate = max_frame_rate.value();
+      if (auto duration = (std::chrono::system_clock::now() - start); duration < (1.0s / real_max_frame_rate)) {
+        std::this_thread::sleep_for(1.0s / real_max_frame_rate - duration);
+      }
     }
     if (start - second_begin > 1s) {
       info("fps: {}/s", frame_count);
@@ -89,13 +94,9 @@ void liu::base_application::run() {
   }
 }
 
-void liu::base_application::close() {
-  lock.lock();
-  should_close = true;
-  lock.unlock();
-}
+void liu::base_application::close() { should_close = true; }
 
 liu::base_application::~base_application() {
   glfwDestroyWindow(window);
-  cleanup_context();
+  clean_context();
 }

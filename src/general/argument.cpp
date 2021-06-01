@@ -20,11 +20,11 @@
 #endif
 
 std::filesystem::path liu::parse_argument(int argc, const char *argv[]) {
-  std::filesystem::path assets_path;
+  std::filesystem::path assets_path = "assets";
   cxxopts::Options options("computer-graphics", "A program for computer graphics class");
   try {
     options.add_options()("h,help", "Display this help message.")("a,assets", "the path to assets directory.",
-                                                                  cxxopts::value<std::filesystem::path>());
+                                                                  cxxopts::value<std::filesystem::path>(assets_path));
     auto result = options.parse(argc, argv);
     if (result.count("help")) {
       std::cout << options.help() << std::endl;

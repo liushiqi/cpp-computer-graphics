@@ -1,5 +1,6 @@
 /build
 /.vscode
 /.idea
+/.git
 /Dockerfile
 /docker-compose.yml

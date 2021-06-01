@@ -124,11 +124,10 @@ void liu::init_context() {
 
 void liu::clean_context() {
   glfwTerminate();
-  gladLoaderUnloadGL();
 }
 
 void liu::base_application::init_context() {
-  if (!gladLoaderLoadGL()) {
+  if (!gladLoadGL((GLADloadfunc)glfwGetProcAddress)) {
     fatal("Failed to load OpenGL.");
     exit(1);
   }
@@ -141,4 +140,4 @@ void liu::base_application::init_context() {
   }
 }
 
-void liu::base_application::cleanup_context() { info("Clean context finished."); }
+void liu::base_application::clean_context() { info("Clean context finished."); }

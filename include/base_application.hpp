@@ -1,15 +1,18 @@
 #pragma once
 
 #ifdef VULKAN_ENABLED
+#define VK_ENABLE_BETA_EXTENSIONS
 #include <glad/vulkan.h>
 #else
 #include <glad/gl.h>
 #endif
+#include <atomic>
 #include <filesystem>
 #include <glfw.h>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <vector>
 
 namespace liu {
 
@@ -19,12 +22,24 @@ void init_context();
 
 void clean_context();
 
+#ifdef VULKAN_ENABLED
+std::string vk_error_to_string(VkResult error);
+#endif
+
 class callbacks_t;
+
+class shader;
 
 class base_application {
 public:
-  base_application(const std::filesystem::path &assets_path, int width, int height, const std::string &title,
-                   std::unique_ptr<callbacks_t> callbacks = std::make_unique<callbacks_t>());
+#ifdef NDEBUG
+  static constexpr bool enable_validation_layers = false;
+#else
+  static constexpr bool enable_validation_layers = true;
+#endif
+
+  base_application(const std::filesystem::path &assets_path, uint32_t width, uint32_t height, const std::optional<uint32_t> &max_frame_rate,
+                   const std::string &title, std::unique_ptr<callbacks_t> callbacks = std::make_unique<callbacks_t>());
 
   void run();
 
@@ -35,41 +50,47 @@ public:
   ~base_application();
 
 private:
-  const std::filesystem::path &assets_base_path;
-  std::unique_ptr<callbacks_t> callbacks;
-  const std::string &title;
-  GLFWwindow *window;
-  uint32_t width, height;
-  bool should_close;
-#ifdef VULKAN_ENABLED
-  VkInstance instance = nullptr;
-  VkPhysicalDevice physical_device = nullptr;
-  VkDebugUtilsMessengerEXT debug_messenger = nullptr;
-  VkSurfaceKHR surface = nullptr;
-  std::optional<uint32_t> graphics_family = std::nullopt, present_family = std::nullopt;
-#else
-#endif
-
-#ifdef NDEBUG
-  static constexpr bool enable_validation_layers = false;
-#else
-  static constexpr bool enable_validation_layers = true;
-#endif
-
-  void create_window(int width, int height);
+  void create_window();
 
   void init_context();
 
   void register_callbacks();
 
-  void cleanup_context();
+  void clean_context();
 
   friend class callbacks_t;
 
-protected:
-  std::mutex lock;
+  friend class shader;
 
+protected:
   virtual void main_loop() = 0;
+
+  const std::filesystem::path &assets_base_path;
+  const std::optional<uint32_t> max_frame_rate;
+  std::unique_ptr<callbacks_t> callbacks;
+  const std::string &title;
+  GLFWwindow *window;
+  uint32_t width, height;
+  std::atomic<bool> should_close;
+#ifdef VULKAN_ENABLED
+  VkInstance instance = nullptr;
+  VkPhysicalDevice physical_device = nullptr;
+  VkDebugUtilsMessengerEXT debug_messenger = nullptr;
+  VkSurfaceKHR surface = nullptr;
+  VkDevice device = nullptr;
+  std::optional<uint32_t> graphics_family = std::nullopt, present_family = std::nullopt;
+  VkQueue graphics_queue = nullptr, present_queue = nullptr;
+  VkSwapchainKHR swap_chain;
+  std::vector<VkImage> swap_chain_images;
+  VkFormat swap_chain_image_format;
+  VkExtent2D swap_chain_extent;
+  std::vector<VkImageView> swap_chain_image_view;
+  VkRenderPass render_pass;
+  std::vector<VkFramebuffer> swap_chain_frame_buffers;
+  VkCommandPool command_pool;
+  std::vector<VkCommandBuffer> command_buffers;
+#else
+#endif
 };
 
 class callbacks_t {

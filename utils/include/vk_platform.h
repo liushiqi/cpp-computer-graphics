@@ -37,14 +37,14 @@ extern "C"
  * Function pointer type: typedef void (VKAPI_PTR *PFN_vkCommand)(void);
  */
 #if defined(_WIN32)
-/* On Windows, Vulkan commands use the stdcall convention */
+    /* On Windows, Vulkan commands use the stdcall convention */
     #define VKAPI_ATTR
     #define VKAPI_CALL __stdcall
     #define VKAPI_PTR  VKAPI_CALL
 #elif defined(__ANDROID__) && defined(__ARM_ARCH) && __ARM_ARCH < 7
-#error "Vulkan isn't supported for the 'armeabi' NDK ABI"
+    #error "Vulkan isn't supported for the 'armeabi' NDK ABI"
 #elif defined(__ANDROID__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_32BIT_STATE)
-/* On Android 32-bit ARM targets, Vulkan functions use the "hardfloat" */
+    /* On Android 32-bit ARM targets, Vulkan functions use the "hardfloat" */
     /* calling convention, i.e. float parameters are passed in registers. This */
     /* is true even if the rest of the application passes floats on the stack, */
     /* as it does by default when compiling for the armeabi-v7a NDK ABI. */
@@ -52,17 +52,17 @@ extern "C"
     #define VKAPI_CALL
     #define VKAPI_PTR  VKAPI_ATTR
 #else
-/* On other platforms, use the default calling convention */
-#define VKAPI_ATTR
-#define VKAPI_CALL
-#define VKAPI_PTR
+    /* On other platforms, use the default calling convention */
+    #define VKAPI_ATTR
+    #define VKAPI_CALL
+    #define VKAPI_PTR
 #endif
 
 #include <stddef.h>
 
 #if !defined(VK_NO_STDINT_H)
-#if defined(_MSC_VER) && (_MSC_VER < 1600)
-typedef signed   __int8  int8_t;
+    #if defined(_MSC_VER) && (_MSC_VER < 1600)
+        typedef signed   __int8  int8_t;
         typedef unsigned __int8  uint8_t;
         typedef signed   __int16 int16_t;
         typedef unsigned __int16 uint16_t;
@@ -70,9 +70,9 @@ typedef signed   __int8  int8_t;
         typedef unsigned __int32 uint32_t;
         typedef signed   __int64 int64_t;
         typedef unsigned __int64 uint64_t;
-#else
-#include <stdint.h>
-#endif
+    #else
+        #include <stdint.h>
+    #endif
 #endif /* !defined(VK_NO_STDINT_H) */
 
 #ifdef __cplusplus

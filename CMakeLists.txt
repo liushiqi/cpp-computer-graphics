@@ -135,11 +135,15 @@ function(add_shader target_name shader_name)
   message(STATUS "Added shader ${shader_name} to ${target_name}")
 endfunction()
 
+file(GLOB_RECURSE GLAD_SOURCES "utils/src/*.c")
+add_library(utils ${GLAD_SOURCES})
+target_include_directories(utils PUBLIC utils/include)
+
 add_executable(computer_graphics ${PROGRAM_MAIN_FILE} ${PROGRAM_SOURCES})
 if (GRAPHICS_USE_VULKAN)
   target_sources(computer_graphics PUBLIC ${PROGRAM_SOURCES_VULKAN})
   target_compile_definitions(computer_graphics PRIVATE VULKAN_ENABLED)
-  file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/shaders/binary")
+  file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/binary")
   add_shader(computer_graphics default)
 else ()
   target_sources(computer_graphics PUBLIC ${PROGRAM_SOURCES_OPENGL})
@@ -155,10 +159,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 target_compile_definitions(computer_graphics PRIVATE __SOURCE_DIR__="${CMAKE_SOURCE_DIR}")
-
 target_include_directories(computer_graphics PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(computer_graphics PUBLIC ${CMAKE_SOURCE_DIR}/glad_include)
-
-target_link_libraries(computer_graphics PUBLIC glfw cxxopts glm::glm assimp::assimp spdlog::spdlog ${CMAKE_DL_LIBS})
+target_link_libraries(computer_graphics PUBLIC glfw utils cxxopts glm::glm assimp::assimp spdlog::spdlog ${CMAKE_DL_LIBS})
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")

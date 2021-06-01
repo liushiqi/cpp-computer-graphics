@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <logger.hpp>
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -11,12 +12,13 @@ public:
       return;
     }
 
-    std::string prefix(__SOURCE_DIR__ "");
-    std::string file_name = msg.source.filename + prefix.length() + 1;
+    std::filesystem::path prefix(__SOURCE_DIR__ "");
+    std::filesystem::path file_name = std::filesystem::absolute(msg.source.filename).lexically_relative(prefix);
+    std::string file = file_name.string();
 
     std::string source_line = std::to_string(msg.source.line);
 
-    dest.append(file_name.data(), file_name.data() + file_name.length());
+    dest.append(file.data(), file.data() + file.length());
     dest.push_back(':');
     dest.append(source_line.data(), source_line.data() + source_line.length());
   }
@@ -30,12 +32,12 @@ void liu::init_logger() {
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(spdlog::level::info);
   auto formatter = std::make_unique<spdlog::pattern_formatter>();
-  formatter->add_flag<simple_file_path_formatter_flag>('*').set_pattern("%^[%H:%M:%S] [%5l] [%*] [%!]%$ %v");
+  formatter->add_flag<simple_file_path_formatter_flag>('*').set_pattern("%^[%H:%M:%S] [%8l] [%*] [%!]%$ %v");
   console_sink->set_formatter(std::move(formatter));
 
   auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("logs/trace.log", 10 * 1024 * 1024, 64, true);
   formatter = std::make_unique<spdlog::pattern_formatter>();
-  formatter->add_flag<simple_file_path_formatter_flag>('*').set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%5l] [%*] [%!] %v");
+  formatter->add_flag<simple_file_path_formatter_flag>('*').set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%8l] [%*] [%!] %v");
   file_sink->set_formatter(std::move(formatter));
   file_sink->set_level(spdlog::level::trace);
 
