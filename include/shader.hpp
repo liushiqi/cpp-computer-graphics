@@ -59,7 +59,7 @@ public:
 
   void active() const;
 
-  static void inactive();
+  void inactive() const;
 
   void apply(const std::function<void()> &callback);
 

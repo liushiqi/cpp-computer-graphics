@@ -62,6 +62,7 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
       VkShaderModule shader_module;
       if (VkResult result = vkCreateShaderModule(app.device, &create_info, nullptr, &shader_module); result != VK_SUCCESS) {
         error("Failed to create shader module of shader {} in stage {} with error: {}", name, type, liu::vk_error_to_string(result));
+        liu::clean_logger();
         throw std::runtime_error("Failed to create shader module!");
       }
       shader_modules.emplace_back(shader_module);
@@ -167,6 +168,7 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                                   .pPushConstantRanges = nullptr};
   if (VkResult result = vkCreatePipelineLayout(app.device, &pipeline_layout_info, nullptr, &pipeline_layout); result != VK_SUCCESS) {
     error("Failed to create pipeline layout with error {}", liu::vk_error_to_string(result));
+    liu::clean_logger();
     throw std::runtime_error("Failed to create pipeline layout.");
   }
 
@@ -192,6 +194,7 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
 
   if (VkResult result = vkCreateGraphicsPipelines(app.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline); result != VK_SUCCESS) {
     error("Failed to create graphics pipeline with error {}", liu::vk_error_to_string(result));
+    liu::clean_logger();
     throw std::runtime_error("Failed to create graphics pipeline.");
   }
 
@@ -256,7 +259,11 @@ void liu::shader::active() const {
     vkCmdBindPipeline(app.command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 
     vkCmdDraw(app.command_buffers[i], 3, 1, 0, 0);
+  }
+}
 
+void liu::shader::inactive() const {
+  for (size_t i = 0; i < app.command_buffers.size(); i++) {
     vkCmdEndRenderPass(app.command_buffers[i]);
 
     if (vkEndCommandBuffer(app.command_buffers[i]) != VK_SUCCESS) {
@@ -264,8 +271,6 @@ void liu::shader::active() const {
     }
   }
 }
-
-void liu::shader::inactive() {}
 
 void liu::shader::apply(const std::function<void()> &callback) {
   active();

@@ -108,6 +108,7 @@ void APIENTRY gl_debug_message_callback(GLenum source, GLenum type, GLuint id, G
 void liu::init_context() {
   if (!glfwInit()) {
     fatal("GLFW initialization failed.");
+    liu::clean_logger();
     throw std::runtime_error("GLFW initialization failed.");
   }
 
