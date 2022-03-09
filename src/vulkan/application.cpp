@@ -6,7 +6,7 @@ struct raw_str_less {
   inline bool operator()(const char *a, const char *b) const { return strcmp(a, b) < 0; }
 };
 
-static const char *const device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME};
+static const char *const device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 static const char *const layers_to_check[] = {"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_standard_validation"};
 

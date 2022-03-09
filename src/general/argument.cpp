@@ -23,15 +23,15 @@ std::filesystem::path liu::parse_argument(int argc, const char *argv[]) {
   std::filesystem::path assets_path = "assets";
   cxxopts::Options options("computer-graphics", "A program for computer graphics class");
   try {
-    options.add_options()("h,help", "Display this help message.")("a,assets", "the path to assets directory.",
+    options.add_options()("h,help", "Display this help message.")("a,assets-path", "the path to assets directory.",
                                                                   cxxopts::value<std::filesystem::path>(assets_path));
     auto result = options.parse(argc, argv);
     if (result.count("help")) {
       std::cout << options.help() << std::endl;
       exit(0);
     }
-    if (result.count("assets")) {
-      assets_path = result["assets"].as<std::filesystem::path>();
+    if (result.count("assets-path")) {
+      assets_path = result["assets-path"].as<std::filesystem::path>();
     }
   } catch (const cxxopts::OptionSpecException &error) {
     std::cerr << "arguments parse failed: " << error.what() << std::endl << options.help();

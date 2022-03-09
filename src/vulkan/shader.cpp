@@ -16,36 +16,39 @@ VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
     return VK_SHADER_STAGE_FRAGMENT_BIT;
   case liu::shader_type::COMPUTE:
     return VK_SHADER_STAGE_COMPUTE_BIT;
-  case liu::shader_type::RAYGEN:
+  case liu::shader_type::VK_RAY_RAYGEN:
     return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  case liu::shader_type::ANY_HIT:
+  case liu::shader_type::VK_RAY_ANY_HIT:
     return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
-  case liu::shader_type::CLOSEST_HIT:
+  case liu::shader_type::VK_RAY_CLOSEST_HIT:
     return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-  case liu::shader_type::MISS:
+  case liu::shader_type::VK_RAY_MISS:
     return VK_SHADER_STAGE_MISS_BIT_KHR;
-  case liu::shader_type::INTERSECTION:
+  case liu::shader_type::VK_RAY_INTERSECTION:
     return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
-  case liu::shader_type::CALLABLE:
+  case liu::shader_type::VK_RAY_CALLABLE:
     return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
-  case liu::shader_type::TASK:
-    return VK_SHADER_STAGE_TASK_BIT_NV;
-  case liu::shader_type::MESH:
-    return VK_SHADER_STAGE_MESH_BIT_NV;
   }
   return VK_SHADER_STAGE_ALL;
 }
 
 void liu::shader::build_indices() {}
 
-static const liu::shader_type all_shader_types[] = {liu::shader_type::VERTEX, liu::shader_type::TESSELLATION_CONTROL,
-                                                    liu::shader_type::TESSELLATION_EVALUATION, liu::shader_type::GEOMETRY, liu::shader_type::FRAGMENT,
-                                                    liu::shader_type::COMPUTE,
-                                                    // Provided by VK_KHR_ray_tracing_pipeline not available in OpenGL
-                                                    liu::shader_type::RAYGEN, liu::shader_type::ANY_HIT, liu::shader_type::CLOSEST_HIT,
-                                                    liu::shader_type::MISS, liu::shader_type::INTERSECTION, liu::shader_type::CALLABLE,
-                                                    // Provided by VK_NV_mesh_shader
-                                                    liu::shader_type::TASK, liu::shader_type::MESH};
+static const liu::shader_type all_shader_types[] = {
+    liu::shader_type::VERTEX,
+    liu::shader_type::TESSELLATION_CONTROL,
+    liu::shader_type::TESSELLATION_EVALUATION,
+    liu::shader_type::GEOMETRY,
+    liu::shader_type::FRAGMENT,
+    liu::shader_type::COMPUTE,
+    // Provided by VK_KHR_ray_tracing_pipeline not available in OpenGL
+    liu::shader_type::VK_RAY_RAYGEN,
+    liu::shader_type::VK_RAY_ANY_HIT,
+    liu::shader_type::VK_RAY_CLOSEST_HIT,
+    liu::shader_type::VK_RAY_MISS,
+    liu::shader_type::VK_RAY_INTERSECTION,
+    liu::shader_type::VK_RAY_CALLABLE,
+};
 
 liu::shader::shader(const liu::base_application &app, const std::string &name) : app(app), name(name) {
   std::vector<VkShaderModule> shader_modules;
@@ -210,7 +213,7 @@ liu::shader::~shader() {
   vkDestroyPipelineLayout(app.device, pipeline_layout, nullptr);
 }
 
-void liu::shader::apply(const std::function<void()> &callback) const {
+void liu::shader::apply(const std::function<void()> &callback) {
   active();
   callback();
   inactive();
@@ -263,16 +266,16 @@ void liu::shader::active() const {
 }
 
 void liu::shader::inactive() const {
-  for (size_t i = 0; i < app.command_buffers.size(); i++) {
-    vkCmdEndRenderPass(app.command_buffers[i]);
+  for (auto command_buffer : app.command_buffers) {
+    vkCmdEndRenderPass(command_buffer);
 
-    if (vkEndCommandBuffer(app.command_buffers[i]) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
       throw std::runtime_error("failed to record command buffer!");
     }
   }
 }
 
-void liu::shader::apply(const std::function<void()> &callback) {
+void liu::shader::apply(const std::function<void()> &callback) const {
   active();
   callback();
   inactive();

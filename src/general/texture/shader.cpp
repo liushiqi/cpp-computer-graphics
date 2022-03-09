@@ -17,15 +17,12 @@ std::ostream &liu::operator<<(std::ostream &out, const liu::shader_type &type) {
     print_string(FRAGMENT);
     print_string(COMPUTE);
     // Provided by VK_KHR_ray_tracing_pipeline not available in OpenGL
-    print_string(RAYGEN);
-    print_string(ANY_HIT);
-    print_string(CLOSEST_HIT);
-    print_string(MISS);
-    print_string(INTERSECTION);
-    print_string(CALLABLE);
-    // Provided by VK_NV_mesh_shader
-    print_string(TASK);
-    print_string(MESH);
+    print_string(VK_RAY_RAYGEN);
+    print_string(VK_RAY_ANY_HIT);
+    print_string(VK_RAY_CLOSEST_HIT);
+    print_string(VK_RAY_MISS);
+    print_string(VK_RAY_INTERSECTION);
+    print_string(VK_RAY_CALLABLE);
   }
   return out;
 #undef print_string
@@ -45,22 +42,18 @@ std::string shader_type_string(liu::shader_type type) {
     return "frag";
   case liu::shader_type::COMPUTE:
     return "comp";
-  case liu::shader_type::RAYGEN:
+  case liu::shader_type::VK_RAY_RAYGEN:
     return "rayg.glsl";
-  case liu::shader_type::ANY_HIT:
+  case liu::shader_type::VK_RAY_ANY_HIT:
     return "hita.glsl";
-  case liu::shader_type::CLOSEST_HIT:
+  case liu::shader_type::VK_RAY_CLOSEST_HIT:
     return "hitc.glsl";
-  case liu::shader_type::MISS:
+  case liu::shader_type::VK_RAY_MISS:
     return "miss.glsl";
-  case liu::shader_type::INTERSECTION:
+  case liu::shader_type::VK_RAY_INTERSECTION:
     return "ints.glsl";
-  case liu::shader_type::CALLABLE:
+  case liu::shader_type::VK_RAY_CALLABLE:
     return "call.glsl";
-  case liu::shader_type::TASK:
-    return "task.glsl";
-  case liu::shader_type::MESH:
-    return "mesh.glsl";
   }
   return "unknown";
 }
@@ -72,6 +65,7 @@ std::optional<std::vector<std::uint8_t>> liu::load_shader(const std::filesystem:
   if (!std::filesystem::exists(shader_path))
     return std::nullopt;
 
+  info("Loading shader {}", shader_path);
   std::vector<std::uint8_t> shader{};
   std::ifstream shader_file(shader_path, std::ios::in | std::ios::binary);
   shader_file.unsetf(std::ios::skipws);

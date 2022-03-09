@@ -1,7 +1,6 @@
 #include <base_application.hpp>
 #include <logger.hpp>
 #include <thread>
-#include <unistd.h>
 
 void liu::base_application::create_window() {
   window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.c_str(), nullptr, nullptr);
