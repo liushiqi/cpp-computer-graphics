@@ -23,7 +23,7 @@ void init_context();
 void clean_context();
 
 #ifdef VULKAN_ENABLED
-std::string vk_error_to_string(VkResult error);
+std::string vk_error_to_string(VkResult result);
 #endif
 
 class callbacks_t;

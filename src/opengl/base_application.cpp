@@ -106,11 +106,8 @@ void APIENTRY gl_debug_message_callback(GLenum source, GLenum type, GLuint id, G
 }
 
 void liu::init_context() {
-  if (!glfwInit()) {
-    fatal("GLFW initialization failed.");
-    liu::clean_logger();
-    throw std::runtime_error("GLFW initialization failed.");
-  }
+  int result = glfwInit();
+  assert_log(result == GLFW_TRUE, "Failed to initialize GLFW");
 
   int glfw_version_major, glfw_version_minor, glfw_version_rev;
   glfwGetVersion(&glfw_version_major, &glfw_version_minor, &glfw_version_rev);
@@ -123,15 +120,11 @@ void liu::init_context() {
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 }
 
-void liu::clean_context() {
-  glfwTerminate();
-}
+void liu::clean_context() { glfwTerminate(); }
 
 void liu::base_application::init_context() {
-  if (!gladLoadGL((GLADloadfunc)glfwGetProcAddress)) {
-    fatal("Failed to load OpenGL.");
-    exit(1);
-  }
+  int result = gladLoadGL((GLADloadfunc)glfwGetProcAddress);
+  assert_log(result == VK_SUCCESS, "Failed to load OpenGL");
 
   GLint flags;
   glGetIntegerv(GL_CONTEXT_FLAGS, &flags);

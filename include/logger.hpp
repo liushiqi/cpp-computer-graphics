@@ -51,6 +51,14 @@
   do {                                                                                                                                               \
     SPDLOG_CRITICAL(__VA_ARGS__);                                                                                                                    \
   } while (false)
+#define assert_log(condition, ...)                                                                                                                   \
+  do {                                                                                                                                               \
+    if (!(condition)) {                                                                                                                              \
+      fatal(__VA_ARGS__);                                                                                                                            \
+      liu::clean_logger();                                                                                                                           \
+      throw std::runtime_error(fmt::format("Assertion {} failed. {}", #condition, fmt::format(__VA_ARGS__)));                                     \
+    }                                                                                                                                                \
+  } while (false)
 
 namespace liu {
 

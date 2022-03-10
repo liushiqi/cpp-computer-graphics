@@ -16,40 +16,45 @@ VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
     return VK_SHADER_STAGE_FRAGMENT_BIT;
   case liu::shader_type::COMPUTE:
     return VK_SHADER_STAGE_COMPUTE_BIT;
-  case liu::shader_type::RAYGEN:
+  case liu::shader_type::VK_RAY_RAYGEN:
     return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-  case liu::shader_type::ANY_HIT:
+  case liu::shader_type::VK_RAY_ANY_HIT:
     return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
-  case liu::shader_type::CLOSEST_HIT:
+  case liu::shader_type::VK_RAY_CLOSEST_HIT:
     return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-  case liu::shader_type::MISS:
+  case liu::shader_type::VK_RAY_MISS:
     return VK_SHADER_STAGE_MISS_BIT_KHR;
-  case liu::shader_type::INTERSECTION:
+  case liu::shader_type::VK_RAY_INTERSECTION:
     return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
-  case liu::shader_type::CALLABLE:
+  case liu::shader_type::VK_RAY_CALLABLE:
     return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
-  case liu::shader_type::TASK:
-    return VK_SHADER_STAGE_TASK_BIT_NV;
-  case liu::shader_type::MESH:
-    return VK_SHADER_STAGE_MESH_BIT_NV;
   }
   return VK_SHADER_STAGE_ALL;
 }
 
 void liu::shader::build_indices() {}
 
-static const liu::shader_type all_shader_types[] = {liu::shader_type::VERTEX, liu::shader_type::TESSELLATION_CONTROL,
-                                                    liu::shader_type::TESSELLATION_EVALUATION, liu::shader_type::GEOMETRY, liu::shader_type::FRAGMENT,
-                                                    liu::shader_type::COMPUTE,
-                                                    // Provided by VK_KHR_ray_tracing_pipeline not available in OpenGL
-                                                    liu::shader_type::RAYGEN, liu::shader_type::ANY_HIT, liu::shader_type::CLOSEST_HIT,
-                                                    liu::shader_type::MISS, liu::shader_type::INTERSECTION, liu::shader_type::CALLABLE,
-                                                    // Provided by VK_NV_mesh_shader
-                                                    liu::shader_type::TASK, liu::shader_type::MESH};
+static const liu::shader_type all_shader_types[] = {
+    liu::shader_type::VERTEX,
+    liu::shader_type::TESSELLATION_CONTROL,
+    liu::shader_type::TESSELLATION_EVALUATION,
+    liu::shader_type::GEOMETRY,
+    liu::shader_type::FRAGMENT,
+    liu::shader_type::COMPUTE,
+    // Provided by VK_KHR_ray_tracing_pipeline not available in OpenGL
+    liu::shader_type::VK_RAY_RAYGEN,
+    liu::shader_type::VK_RAY_ANY_HIT,
+    liu::shader_type::VK_RAY_CLOSEST_HIT,
+    liu::shader_type::VK_RAY_MISS,
+    liu::shader_type::VK_RAY_INTERSECTION,
+    liu::shader_type::VK_RAY_CALLABLE,
+};
 
 liu::shader::shader(const liu::base_application &app, const std::string &name) : app(app), name(name) {
+  VkResult result;
   std::vector<VkShaderModule> shader_modules;
   std::vector<VkPipelineShaderStageCreateInfo> shader_stages_info;
+
   for (auto type : all_shader_types) {
     auto file = load_shader(app.assets_base_path, name, type);
     if (file != std::nullopt) {
@@ -60,11 +65,10 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                            .codeSize = real_file.size(),
                                            .pCode = (unsigned int *)real_file.data()};
       VkShaderModule shader_module;
-      if (VkResult result = vkCreateShaderModule(app.device, &create_info, nullptr, &shader_module); result != VK_SUCCESS) {
-        error("Failed to create shader module of shader {} in stage {} with error: {}", name, type, liu::vk_error_to_string(result));
-        liu::clean_logger();
-        throw std::runtime_error("Failed to create shader module!");
-      }
+      result = vkCreateShaderModule(app.device, &create_info, nullptr, &shader_module);
+      assert_log(result == VK_SUCCESS, "Failed to create shader module of shader {} in stage {} with error {}", name, type,
+                 liu::vk_error_to_string(result));
+
       shader_modules.emplace_back(shader_module);
       VkPipelineShaderStageCreateInfo shader_stage_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                                                         .pNext = nullptr,
@@ -166,11 +170,8 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                                   .pSetLayouts = nullptr,
                                                   .pushConstantRangeCount = 0,
                                                   .pPushConstantRanges = nullptr};
-  if (VkResult result = vkCreatePipelineLayout(app.device, &pipeline_layout_info, nullptr, &pipeline_layout); result != VK_SUCCESS) {
-    error("Failed to create pipeline layout with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create pipeline layout.");
-  }
+  result = vkCreatePipelineLayout(app.device, &pipeline_layout_info, nullptr, &pipeline_layout);
+  assert_log(result == VK_SUCCESS, "Failed to create pipeline layout with error {}", liu::vk_error_to_string(result));
 
   VkGraphicsPipelineCreateInfo pipeline_info{.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                              .pNext = nullptr,
@@ -192,11 +193,8 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                              .basePipelineHandle = VK_NULL_HANDLE,
                                              .basePipelineIndex = -1};
 
-  if (VkResult result = vkCreateGraphicsPipelines(app.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline); result != VK_SUCCESS) {
-    error("Failed to create graphics pipeline with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create graphics pipeline.");
-  }
+  result = vkCreateGraphicsPipelines(app.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
+  assert_log(result == VK_SUCCESS, "Failed to create graphics pipeline with error {}", liu::vk_error_to_string(result));
 
   for (auto module : shader_modules) {
     vkDestroyShaderModule(app.device, module, nullptr);
@@ -210,7 +208,7 @@ liu::shader::~shader() {
   vkDestroyPipelineLayout(app.device, pipeline_layout, nullptr);
 }
 
-void liu::shader::apply(const std::function<void()> &callback) const {
+void liu::shader::apply(std::function<void()> &callback) const {
   active();
   callback();
   inactive();
@@ -263,17 +261,11 @@ void liu::shader::active() const {
 }
 
 void liu::shader::inactive() const {
-  for (size_t i = 0; i < app.command_buffers.size(); i++) {
-    vkCmdEndRenderPass(app.command_buffers[i]);
+  for (auto command_buffer : app.command_buffers) {
+    vkCmdEndRenderPass(command_buffer);
 
-    if (vkEndCommandBuffer(app.command_buffers[i]) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
       throw std::runtime_error("failed to record command buffer!");
     }
   }
-}
-
-void liu::shader::apply(const std::function<void()> &callback) {
-  active();
-  callback();
-  inactive();
 }

@@ -18,15 +18,12 @@ enum class shader_type : std::uint8_t {
   FRAGMENT,
   COMPUTE,
   // Provided by VK_KHR_ray_tracing_pipeline not available in OpenGL
-  RAYGEN,
-  ANY_HIT,
-  CLOSEST_HIT,
-  MISS,
-  INTERSECTION,
-  CALLABLE,
-  // Provided by VK_NV_mesh_shader
-  TASK,
-  MESH
+  VK_RAY_RAYGEN,
+  VK_RAY_ANY_HIT,
+  VK_RAY_CLOSEST_HIT,
+  VK_RAY_MISS,
+  VK_RAY_INTERSECTION,
+  VK_RAY_CALLABLE,
 };
 
 std::ostream &operator<<(std::ostream &out, const shader_type &type);
@@ -61,8 +58,6 @@ public:
 
   void inactive() const;
 
-  void apply(const std::function<void()> &callback);
-
-  void apply(const std::function<void()> &callback) const;
+  void apply(std::function<void()> &callback) const;
 };
 } // namespace liu
