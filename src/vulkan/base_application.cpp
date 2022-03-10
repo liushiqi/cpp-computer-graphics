@@ -12,8 +12,8 @@ static const char *const layers_to_check[] = {"VK_LAYER_KHRONOS_validation", "VK
 
 static const char *const instance_extensions[] = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
 
-std::string liu::vk_error_to_string(VkResult error) {
-  switch (error) {
+std::string liu::vk_error_to_string(VkResult result) {
+  switch (result) {
 #define STR(r)                                                                                                                                       \
   case VK_##r:                                                                                                                                       \
     return #r
@@ -82,17 +82,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_message_callback(VkDebugUtils
 }
 
 void liu::init_context() {
-  if (!glfwInit()) {
-    fatal("GLFW initialization failed.");
-    liu::clean_logger();
-    throw std::runtime_error("GLFW initialization failed.");
-  }
+  int result;
+  result = glfwInit();
+  assert_log(result == GLFW_TRUE, "GLFW initialization failed.");
 
-  if (!glfwVulkanSupported()) {
-    fatal("Vulkan not supported.");
-    liu::clean_logger();
-    throw std::runtime_error("Vulkan not supported.");
-  }
+  result = glfwVulkanSupported();
+  assert_log(result == GLFW_TRUE, "Vulkan not supported.");
 
   int glfw_version_major, glfw_version_minor, glfw_version_rev;
   glfwGetVersion(&glfw_version_major, &glfw_version_minor, &glfw_version_rev);
@@ -157,11 +152,9 @@ static std::pair<std::vector<const char *>, std::optional<VkDebugUtilsMessengerC
 
 static VkSurfaceKHR create_surface(GLFWwindow *window, VkInstance instance) {
   VkSurfaceKHR surface;
-  if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-    fatal("Failed to create window surface.");
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create window surface.");
-  }
+  VkResult result;
+  result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+  assert_log(result == VK_SUCCESS, "Failed to create window surface with error {}", liu::vk_error_to_string(result));
   return surface;
 }
 
@@ -199,12 +192,7 @@ static std::tuple<std::optional<uint32_t>, std::optional<uint32_t>> find_queue_i
 static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR surface) {
   uint32_t device_count;
   vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
-
-  if (device_count == 0) {
-    fatal("No valid physical device for vulkan.");
-    liu::clean_logger();
-    throw std::runtime_error("No valid physical device for vulkan.");
-  }
+  assert_log(device_count > 0, "No valid physical device for vulkan.");
 
   std::vector<VkPhysicalDevice> devices(device_count);
   vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
@@ -268,6 +256,7 @@ static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR
     }
   }
 
+  assert_log(discrete != nullptr || integrated != nullptr, "No valid physical device for vulkan.");
   if (discrete != nullptr) {
     VkPhysicalDeviceProperties device_props;
     vkGetPhysicalDeviceProperties(discrete, &device_props);
@@ -278,14 +267,12 @@ static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR
     vkGetPhysicalDeviceProperties(integrated, &device_props);
     info("Select discrete GPU: {}.", device_props.deviceName);
     return integrated;
-  } else {
-    fatal("No valid vulkan device found.");
-    liu::clean_logger();
-    throw std::runtime_error("No valid vulkan device found.");
   }
+  return nullptr;
 }
 
 VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::optional<uint32_t> present_family, VkPhysicalDevice physical_device) {
+  VkResult result;
   VkDevice device;
 
   std::vector<VkDeviceQueueCreateInfo> queue_infos;
@@ -321,33 +308,28 @@ VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::opt
                                  .ppEnabledExtensionNames = device_extensions,
                                  .pEnabledFeatures = &device_features};
 
-  if (VkResult result = vkCreateDevice(physical_device, &device_info, nullptr, &device); result != VK_SUCCESS) {
-    fatal("Failed to create logical device with error {}.", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create logical device.");
-  }
+  result = vkCreateDevice(physical_device, &device_info, nullptr, &device);
+  assert_log(result == VK_SUCCESS, "Failed to create logical device with error {}", liu::vk_error_to_string(result));
 
   return device;
 }
 
 std::tuple<VkSwapchainKHR, std::vector<VkImage>, VkFormat, VkExtent2D>
 create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice device, VkSurfaceKHR surface, const uint32_t queue_family[2]) {
+  VkResult result;
   VkSurfaceCapabilitiesKHR capabilities;
 
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
 
   uint32_t format_count;
   std::vector<VkSurfaceFormatKHR> formats;
-  vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, nullptr);
+  result = vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, nullptr);
+  assert_log(result == VK_SUCCESS, "Failed to get surface formats with error {}", liu::vk_error_to_string(result));
+  assert_log(format_count > 0, "No surface formats found.");
 
-  if (format_count != 0) {
-    formats.resize(format_count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, formats.data());
-  } else {
-    error("No surface format found.");
-    liu::clean_logger();
-    throw std::runtime_error("No surface format found.");
-  }
+  formats.resize(format_count);
+  vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, formats.data());
+  assert_log(result == VK_SUCCESS, "Failed to get surface formats with error {}", liu::vk_error_to_string(result));
   VkSurfaceFormatKHR format = formats[0];
 
   for (const auto &format_iter : formats) {
@@ -414,11 +396,8 @@ create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice
 
   VkSwapchainKHR swap_chain;
 
-  if (VkResult result = vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain); result != VK_SUCCESS) {
-    error("Swap chain create failed with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Swap chain create failed.");
-  }
+  result = vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain);
+  assert_log(result == VK_SUCCESS, "Failed to create swap chain with error {}", liu::vk_error_to_string(result));
 
   std::vector<VkImage> images;
   vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr);
@@ -429,6 +408,8 @@ create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice
 }
 
 std::vector<VkImageView> create_image_view(VkDevice device, const std::vector<VkImage> &images, VkFormat format) {
+  VkResult result;
+
   std::vector<VkImageView> image_views(images.size());
   for (size_t i = 0; i < image_views.size(); i++) {
     VkImageViewCreateInfo create_info{
@@ -444,17 +425,15 @@ std::vector<VkImageView> create_image_view(VkDevice device, const std::vector<Vk
                        .a = VK_COMPONENT_SWIZZLE_IDENTITY},
         .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
 
-    if (VkResult result = vkCreateImageView(device, &create_info, nullptr, &image_views[i]); result != VK_SUCCESS) {
-      error("Failed to create image views with error {}", liu::vk_error_to_string(result));
-      liu::clean_logger();
-      throw std::runtime_error("Failed to create image views.");
-    }
+    result = vkCreateImageView(device, &create_info, nullptr, &image_views[i]);
+    assert_log(result == VK_SUCCESS, "Failed to create image view with error {}", liu::vk_error_to_string(result));
   }
 
   return image_views;
 }
 
 VkRenderPass create_render_pass(VkDevice device, VkFormat swap_chain_image_format) {
+  VkResult result;
   VkRenderPass render_pass;
   VkAttachmentDescription color_attachment{.flags = 0,
                                            .format = swap_chain_image_format,
@@ -488,17 +467,15 @@ VkRenderPass create_render_pass(VkDevice device, VkFormat swap_chain_image_forma
                                           .pSubpasses = &subpass,
                                           .dependencyCount = 0,
                                           .pDependencies = nullptr};
-  if (VkResult result = vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass); result != VK_SUCCESS) {
-    error("Failed to create render pass with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create render pass.");
-  }
+  result = vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass);
+  assert_log(result == VK_SUCCESS, "Failed to create render pass with error {}", liu::vk_error_to_string(result));
 
   return render_pass;
 }
 
 std::vector<VkFramebuffer> create_framebuffer(VkDevice device, const std::vector<VkImageView> &image_view, VkExtent2D extent,
                                               VkRenderPass render_pass) {
+  VkResult result;
   std::vector<VkFramebuffer> frame_buffers;
   for (auto &i : image_view) {
     VkImageView attachments[] = {i};
@@ -513,12 +490,8 @@ std::vector<VkFramebuffer> create_framebuffer(VkDevice device, const std::vector
                                              .width = extent.width,
                                              .height = extent.height,
                                              .layers = 1};
-
-    if (VkResult result = vkCreateFramebuffer(device, &framebuffer_info, nullptr, &framebuffer); result != VK_SUCCESS) {
-      error("Failed to create framebuffer with error {}", liu::vk_error_to_string(result));
-      liu::clean_logger();
-      throw std::runtime_error("Failed to create framebuffer.");
-    }
+    result = vkCreateFramebuffer(device, &framebuffer_info, nullptr, &framebuffer);
+    assert_log(result == VK_SUCCESS, "Failed to create framebuffer with error {}", liu::vk_error_to_string(result));
 
     frame_buffers.emplace_back(framebuffer);
   }
@@ -527,18 +500,18 @@ std::vector<VkFramebuffer> create_framebuffer(VkDevice device, const std::vector
 }
 
 VkCommandPool create_command_pool(VkDevice device, const uint32_t queue_family[2]) {
+  VkResult result;
   VkCommandPool command_pool;
   VkCommandPoolCreateInfo command_pool_info{
       .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, .pNext = nullptr, .flags = 0, .queueFamilyIndex = queue_family[0]};
-  if (VkResult result = vkCreateCommandPool(device, &command_pool_info, nullptr, &command_pool); result != VK_SUCCESS) {
-    error("Failed to create command pool with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create command pool.");
-  }
+  result = vkCreateCommandPool(device, &command_pool_info, nullptr, &command_pool);
+  assert_log(result == VK_SUCCESS, "Failed to create command pool with error {}", liu::vk_error_to_string(result));
+
   return command_pool;
 }
 
 std::vector<VkCommandBuffer> create_command_buffers(VkDevice device, uint32_t size, VkCommandPool command_pool) {
+  VkResult result;
   std::vector<VkCommandBuffer> command_buffer;
   command_buffer.resize(size);
   VkCommandBufferAllocateInfo command_buffer_info{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -546,21 +519,23 @@ std::vector<VkCommandBuffer> create_command_buffers(VkDevice device, uint32_t si
                                                   .commandPool = command_pool,
                                                   .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                                                   .commandBufferCount = (uint32_t)command_buffer.size()};
-  if (VkResult result = vkAllocateCommandBuffers(device, &command_buffer_info, command_buffer.data()); result != VK_SUCCESS) {
-    error("Failed to create command pool with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create command pool.");
-  }
+  result = vkAllocateCommandBuffers(device, &command_buffer_info, command_buffer.data());
+  assert_log(result == VK_SUCCESS, "Failed to create command pool with error {}", liu::vk_error_to_string(result));
 
   return command_buffer;
 }
 
 void liu::base_application::init_context() {
-  if (!gladLoadVulkanUserPtr(nullptr, reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), nullptr)) {
-    fatal("GLAD load vulkan failed.");
-    liu::clean_logger();
-    throw std::runtime_error("GLAD load vulkan failed.");
-  }
+  VkResult result;
+  int load_result;
+
+  load_result = gladLoadVulkanUserPtr(nullptr, reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), nullptr);
+  assert_log(load_result != 0, "GLAD load vulkan failed.");
+
+  uint32_t vk_api_version;
+  vkEnumerateInstanceVersion(&vk_api_version);
+  info("Loaded vulkan with version {}.{}.{}", VK_API_VERSION_MAJOR(vk_api_version), VK_API_VERSION_MINOR(vk_api_version),
+       VK_API_VERSION_PATCH(vk_api_version));
 
   uint32_t extension_count = 0;
   const char **glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
@@ -601,30 +576,21 @@ void liu::base_application::init_context() {
                                      .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
                                      .ppEnabledExtensionNames = extensions.data()};
 
-  if (VkResult result = vkCreateInstance(&instance_info, nullptr, &instance); result != VK_SUCCESS) {
-    error("Vulkan failed to create a instance with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Vulkan failed to create a instance.");
-  }
+  result = vkCreateInstance(&instance_info, nullptr, &instance);
+  assert_log(result == VK_SUCCESS, "Failed to create instance with error {}", liu::vk_error_to_string(result));
 
   this->surface = create_surface(window, instance);
 
   this->physical_device = select_physical_device(instance, surface);
 
-  if (!gladLoadVulkanUserPtr(physical_device, reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), instance)) {
-    fatal("GLAD load vulkan failed.");
-    liu::clean_logger();
-    throw std::runtime_error("GLAD load vulkan failed.");
-  }
+  load_result = gladLoadVulkanUserPtr(physical_device, reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), instance);
+  assert_log(load_result != 0, "GLAD load vulkan failed.", liu::vk_error_to_string(result));
 
   info("GLAD load vulkan succeeded.");
 
   if (debug_info.has_value()) {
-    if (VkResult result = vkCreateDebugUtilsMessengerEXT(instance, &debug_info.value(), nullptr, &debug_messenger); result != VK_SUCCESS) {
-      fatal("Vulkan debug messenger failed to init with error {}.", liu::vk_error_to_string(result));
-      liu::clean_logger();
-      throw std::runtime_error("Vulkan debug messenger failed to init.");
-    }
+    result = vkCreateDebugUtilsMessengerEXT(instance, &debug_info.value(), nullptr, &debug_messenger);
+    assert_log(result == VK_SUCCESS, "Vulkan debug messenger failed to init with error {}", liu::vk_error_to_string(result));
   }
 
   const auto [graphics_family, present_family] = find_queue_indices(physical_device, surface);

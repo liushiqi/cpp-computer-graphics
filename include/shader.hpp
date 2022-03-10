@@ -58,8 +58,6 @@ public:
 
   void inactive() const;
 
-  void apply(const std::function<void()> &callback) const;
-
-  void apply(const std::function<void()> &callback);
+  void apply(std::function<void()> &callback) const;
 };
 } // namespace liu

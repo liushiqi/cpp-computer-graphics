@@ -51,8 +51,10 @@ static const liu::shader_type all_shader_types[] = {
 };
 
 liu::shader::shader(const liu::base_application &app, const std::string &name) : app(app), name(name) {
+  VkResult result;
   std::vector<VkShaderModule> shader_modules;
   std::vector<VkPipelineShaderStageCreateInfo> shader_stages_info;
+
   for (auto type : all_shader_types) {
     auto file = load_shader(app.assets_base_path, name, type);
     if (file != std::nullopt) {
@@ -63,11 +65,10 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                            .codeSize = real_file.size(),
                                            .pCode = (unsigned int *)real_file.data()};
       VkShaderModule shader_module;
-      if (VkResult result = vkCreateShaderModule(app.device, &create_info, nullptr, &shader_module); result != VK_SUCCESS) {
-        error("Failed to create shader module of shader {} in stage {} with error: {}", name, type, liu::vk_error_to_string(result));
-        liu::clean_logger();
-        throw std::runtime_error("Failed to create shader module!");
-      }
+      result = vkCreateShaderModule(app.device, &create_info, nullptr, &shader_module);
+      assert_log(result == VK_SUCCESS, "Failed to create shader module of shader {} in stage {} with error {}", name, type,
+                 liu::vk_error_to_string(result));
+
       shader_modules.emplace_back(shader_module);
       VkPipelineShaderStageCreateInfo shader_stage_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                                                         .pNext = nullptr,
@@ -169,11 +170,8 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                                   .pSetLayouts = nullptr,
                                                   .pushConstantRangeCount = 0,
                                                   .pPushConstantRanges = nullptr};
-  if (VkResult result = vkCreatePipelineLayout(app.device, &pipeline_layout_info, nullptr, &pipeline_layout); result != VK_SUCCESS) {
-    error("Failed to create pipeline layout with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create pipeline layout.");
-  }
+  result = vkCreatePipelineLayout(app.device, &pipeline_layout_info, nullptr, &pipeline_layout);
+  assert_log(result == VK_SUCCESS, "Failed to create pipeline layout with error {}", liu::vk_error_to_string(result));
 
   VkGraphicsPipelineCreateInfo pipeline_info{.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                              .pNext = nullptr,
@@ -195,11 +193,8 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                              .basePipelineHandle = VK_NULL_HANDLE,
                                              .basePipelineIndex = -1};
 
-  if (VkResult result = vkCreateGraphicsPipelines(app.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline); result != VK_SUCCESS) {
-    error("Failed to create graphics pipeline with error {}", liu::vk_error_to_string(result));
-    liu::clean_logger();
-    throw std::runtime_error("Failed to create graphics pipeline.");
-  }
+  result = vkCreateGraphicsPipelines(app.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
+  assert_log(result == VK_SUCCESS, "Failed to create graphics pipeline with error {}", liu::vk_error_to_string(result));
 
   for (auto module : shader_modules) {
     vkDestroyShaderModule(app.device, module, nullptr);
@@ -211,12 +206,6 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
 liu::shader::~shader() {
   vkDestroyPipeline(app.device, graphics_pipeline, nullptr);
   vkDestroyPipelineLayout(app.device, pipeline_layout, nullptr);
-}
-
-void liu::shader::apply(const std::function<void()> &callback) {
-  active();
-  callback();
-  inactive();
 }
 
 std::int32_t liu::shader::get_attribute_index(const std::string &attribute_name) const {
@@ -275,7 +264,7 @@ void liu::shader::inactive() const {
   }
 }
 
-void liu::shader::apply(const std::function<void()> &callback) const {
+void liu::shader::apply(std::function<void()> &callback) const {
   active();
   callback();
   inactive();

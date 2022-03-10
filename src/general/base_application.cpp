@@ -4,11 +4,7 @@
 
 void liu::base_application::create_window() {
   window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.c_str(), nullptr, nullptr);
-  if (!window) {
-    fatal("GLFW create window failed.");
-    liu::clean_logger();
-    throw std::runtime_error("GLFW create window failed.");
-  }
+  assert_log(window != nullptr, "GLFW create window failed.");
 
   glfwMakeContextCurrent(window);
 
