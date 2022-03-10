@@ -13,7 +13,8 @@ public:
         default_shader(*this, "default") {}
 
 protected:
-  void main_loop() override {}
+  void main_loop() override {
+  }
 
 private:
   liu::shader default_shader;

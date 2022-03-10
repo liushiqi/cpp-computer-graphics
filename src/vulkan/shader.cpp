@@ -216,21 +216,21 @@ void liu::shader::apply(const std::function<void()> &callback) const {
   inactive();
 }
 
-std::int32_t liu::shader::get_attribute_index(const std::string &attribute_name) const {
+std::optional<std::int32_t> liu::shader::get_attribute_index(const std::string &attribute_name) const {
   try {
     return attribute_indices.at(attribute_name);
   } catch (const std::out_of_range &e) {
     warn("Requesting non-existing attribute {} in shader {}", attribute_name, name);
-    throw e;
+    return std::nullopt;
   }
 }
 
-std::int32_t liu::shader::get_uniform_index(const std::string &uniform_name) const {
+std::optional<std::int32_t> liu::shader::get_uniform_index(const std::string &uniform_name) const {
   try {
     return uniform_indices.at(uniform_name);
   } catch (const std::out_of_range &e) {
     warn("Requesting non-existing uniform {} in shader {}", uniform_name, name);
-    throw e;
+    return std::nullopt;
   }
 }
 

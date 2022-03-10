@@ -53,9 +53,9 @@ public:
 
   ~shader();
 
-  [[nodiscard]] std::int32_t get_attribute_index(const std::string &attribute_name) const;
+  [[nodiscard]] std::optional<std::int32_t>  get_attribute_index(const std::string &attribute_name) const;
 
-  [[nodiscard]] std::int32_t get_uniform_index(const std::string &uniform_name) const;
+  [[nodiscard]] std::optional<std::int32_t>  get_uniform_index(const std::string &uniform_name) const;
 
   void active() const;
 

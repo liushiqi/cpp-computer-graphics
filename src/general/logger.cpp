@@ -1,6 +1,7 @@
 #include <iostream>
 #include <filesystem>
 #include <logger.hpp>
+#include <spdlog/common.h>
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -24,7 +25,7 @@ public:
   }
 
   [[nodiscard]] std::unique_ptr<custom_flag_formatter> clone() const override {
-    return spdlog::details::make_unique<simple_file_path_formatter_flag>();
+    return std::make_unique<simple_file_path_formatter_flag>();
   }
 };
 

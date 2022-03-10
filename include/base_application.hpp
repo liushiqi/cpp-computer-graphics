@@ -32,7 +32,7 @@ class shader;
 
 class base_application {
 public:
-#ifdef NDEBUG
+#if defined(NDEBUG) || !defined(VULKAN_ENABLED)
   static constexpr bool enable_validation_layers = false;
 #else
   static constexpr bool enable_validation_layers = true;
@@ -80,15 +80,21 @@ protected:
   VkDevice device = nullptr;
   std::optional<uint32_t> graphics_family = std::nullopt, present_family = std::nullopt;
   VkQueue graphics_queue = nullptr, present_queue = nullptr;
-  VkSwapchainKHR swap_chain;
+  VkSwapchainKHR swap_chain = nullptr;
   std::vector<VkImage> swap_chain_images;
   VkFormat swap_chain_image_format;
   VkExtent2D swap_chain_extent;
   std::vector<VkImageView> swap_chain_image_view;
-  VkRenderPass render_pass;
+  VkRenderPass render_pass = nullptr;
   std::vector<VkFramebuffer> swap_chain_frame_buffers;
   VkCommandPool command_pool;
   std::vector<VkCommandBuffer> command_buffers;
+  std::vector<VkSemaphore> image_available_semaphores;
+  std::vector<VkSemaphore> render_finished_semaphores;
+  std::vector<VkFence> in_flight_fences;
+  std::vector<VkFence> images_in_flight;
+
+  std::uint32_t current_frame = 0;
 #else
 #endif
 };
