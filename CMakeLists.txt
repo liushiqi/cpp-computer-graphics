@@ -161,7 +161,14 @@ endif ()
 
 target_compile_definitions(computer_graphics PRIVATE __SOURCE_DIR__="${CMAKE_SOURCE_DIR}")
 target_include_directories(computer_graphics PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(computer_graphics PUBLIC glfw utils cxxopts glm::glm assimp::assimp spdlog::spdlog ${CMAKE_DL_LIBS})
+target_link_libraries(computer_graphics PUBLIC
+    glfw
+    utils
+    cxxopts
+    glm::glm
+    assimp::assimp
+    spdlog::spdlog
+    ${CMAKE_DL_LIBS})
 
 add_shader(computer_graphics default)
 

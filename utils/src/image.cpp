@@ -8,7 +8,7 @@
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include "stb_image.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

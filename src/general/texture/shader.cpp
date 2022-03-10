@@ -1,5 +1,4 @@
 #include <fstream>
-#include <iomanip>
 #include <iterator>
 #include <logger.hpp>
 #include <shader.hpp>

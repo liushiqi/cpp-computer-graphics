@@ -34,67 +34,17 @@ VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
 
 std::pair<std::map<std::string, std::int32_t>, std::map<std::string, std::int32_t>>
 build_indices(const std::vector<std::uint8_t> &byte_code) {
-  //  std::map<std::string, std::int32_t> indices;
-  //  std::map<std::string, std::int32_t> indices_offsets;
-  //  spirv_cross::Compiler comp(byte_code);
-  //  for (auto &id : comp.get_shader_resources().uniform_buffers) {
-  //    indices[id.name] = id.binding;
-  //    indices_offsets[id.name] = id.offset;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().sampled_images) {
-  //    indices[id.name] = id.binding;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().separate_images) {
-  //    indices[id.name] = id.binding;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().separate_samplers) {
-  //    indices[id.name] = id.binding;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().storage_buffers) {
-  //    indices[id.name] = id.binding;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().storage_images) {
-  //    indices[id.name] = id.binding;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().push_constant_buffers) {
-  //    indices[id.name] = id.binding;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().subpass_inputs) {
-  //    indices[id.name] = id.binding;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().input_attachment_refs) {
-  //    indices[id.name] = id.binding;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().stage_inputs) {
-  //    indices[id.name] = id.location;
-  //  }
-  //  for (auto &id : comp.get_shader_resources().stage_outputs) {
-  //    indices[id.name] = id.location;
-  //  }
+  spv_reflect::ShaderModule module(byte_code);
+  assert_log(module.GetResult() == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
+  return std::make_pair(std::map<std::string, std::int32_t>(), std::map<std::string, std::int32_t>());
 }
-
-static const liu::shader_type all_shader_types[] = {
-    liu::shader_type::VERTEX,
-    liu::shader_type::TESSELLATION_CONTROL,
-    liu::shader_type::TESSELLATION_EVALUATION,
-    liu::shader_type::GEOMETRY,
-    liu::shader_type::FRAGMENT,
-    liu::shader_type::COMPUTE,
-    // Provided by VK_KHR_ray_tracing_pipeline not available in OpenGL
-    liu::shader_type::VK_RAY_RAYGEN,
-    liu::shader_type::VK_RAY_ANY_HIT,
-    liu::shader_type::VK_RAY_CLOSEST_HIT,
-    liu::shader_type::VK_RAY_MISS,
-    liu::shader_type::VK_RAY_INTERSECTION,
-    liu::shader_type::VK_RAY_CALLABLE,
-};
 
 liu::shader::shader(const liu::base_application &app, const std::string &name) : app(app), name(name) {
   VkResult result;
   std::vector<VkShaderModule> shader_modules;
   std::vector<VkPipelineShaderStageCreateInfo> shader_stages_info;
 
-  for (auto type : all_shader_types) {
+  for (auto type : liu::all_shader_types) {
     auto file = load_shader(app.assets_base_path, name, type);
     if (file != std::nullopt) {
       auto real_file = file.value();
@@ -117,6 +67,8 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                                         .pName = "main",
                                                         .pSpecializationInfo = nullptr};
       shader_stages_info.emplace_back(shader_stage_info);
+
+      build_indices(real_file);
     }
   }
 
@@ -244,8 +196,6 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
   for (auto module : shader_modules) {
     vkDestroyShaderModule(app.device, module, nullptr);
   }
-
-  //  build_indices();
 }
 
 liu::shader::~shader() {
