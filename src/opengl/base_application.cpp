@@ -2,8 +2,9 @@
 #include <glad/gl.h>
 #include <logger.hpp>
 
-void APIENTRY gl_debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, [[maybe_unused]] GLsizei length,
-                                        const GLchar *message, [[maybe_unused]] const void *userParam) {
+void APIENTRY gl_debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity,
+                                        [[maybe_unused]] GLsizei length, const GLchar *message,
+                                        [[maybe_unused]] const void *userParam) {
   std::string source_string;
   switch (source) {
   case GL_DEBUG_SOURCE_API:
@@ -81,8 +82,8 @@ void APIENTRY gl_debug_message_callback(GLenum source, GLenum type, GLuint id, G
     break;
   }
 
-  std::string information =
-      fmt::format("OpenGL {} severity message ({}) from {} of type {}: {}", severity_string, id, source_string, type_string, message);
+  std::string information = fmt::format("OpenGL {} severity message ({}) from {} of type {}: {}", severity_string, id,
+                                        source_string, type_string, message);
   switch (type) {
   case GL_DEBUG_TYPE_ERROR:
     error("{}", information);

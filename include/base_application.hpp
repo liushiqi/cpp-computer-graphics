@@ -38,8 +38,9 @@ public:
   static constexpr bool enable_validation_layers = true;
 #endif
 
-  base_application(const std::filesystem::path &assets_path, uint32_t width, uint32_t height, const std::optional<uint32_t> &max_frame_rate,
-                   const std::string &title, std::unique_ptr<callbacks_t> callbacks = std::make_unique<callbacks_t>());
+  base_application(const std::filesystem::path &assets_path, uint32_t width, uint32_t height,
+                   const std::optional<uint32_t> &max_frame_rate, const std::string &title,
+                   std::unique_ptr<callbacks_t> callbacks = std::make_unique<callbacks_t>());
 
   void run();
 
@@ -104,7 +105,8 @@ public:
   virtual ~callbacks_t() = default;
 
 protected:
-  virtual void key_callback(base_application *app, int key, [[maybe_unused]] int scan_code, int action, [[maybe_unused]] int mode) {
+  virtual void key_callback(base_application *app, int key, [[maybe_unused]] int scan_code, int action,
+                            [[maybe_unused]] int mode) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
       app->close();
     }
@@ -112,16 +114,19 @@ protected:
 
   virtual void character_callback([[maybe_unused]] base_application *app, [[maybe_unused]] unsigned int codepoint) {}
 
-  virtual void cursor_position_callback([[maybe_unused]] base_application *app, [[maybe_unused]] double x_pos, [[maybe_unused]] double y_pos) {}
+  virtual void cursor_position_callback([[maybe_unused]] base_application *app, [[maybe_unused]] double x_pos,
+                                        [[maybe_unused]] double y_pos) {}
 
   virtual void cursor_enter_callback([[maybe_unused]] base_application *app, [[maybe_unused]] int entered) {}
 
-  virtual void mouse_button_callback([[maybe_unused]] base_application *app, [[maybe_unused]] int button, [[maybe_unused]] int action,
-                                     [[maybe_unused]] int mods) {}
+  virtual void mouse_button_callback([[maybe_unused]] base_application *app, [[maybe_unused]] int button,
+                                     [[maybe_unused]] int action, [[maybe_unused]] int mods) {}
 
-  virtual void scroll_callback([[maybe_unused]] base_application *app, [[maybe_unused]] double x_offset, [[maybe_unused]] double y_offset) {}
+  virtual void scroll_callback([[maybe_unused]] base_application *app, [[maybe_unused]] double x_offset,
+                               [[maybe_unused]] double y_offset) {}
 
-  virtual void drop_callback([[maybe_unused]] base_application *app, [[maybe_unused]] int count, [[maybe_unused]] const char **paths) {}
+  virtual void drop_callback([[maybe_unused]] base_application *app, [[maybe_unused]] int count,
+                             [[maybe_unused]] const char **paths) {}
 
 private:
   friend class base_application;

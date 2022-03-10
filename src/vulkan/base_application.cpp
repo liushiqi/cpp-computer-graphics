@@ -14,8 +14,8 @@ static const char *const instance_extensions[] = {VK_EXT_DEBUG_UTILS_EXTENSION_N
 
 std::string liu::vk_error_to_string(VkResult result) {
   switch (result) {
-#define STR(r)                                                                                                                                       \
-  case VK_##r:                                                                                                                                       \
+#define STR(r)                                                                                                         \
+  case VK_##r:                                                                                                         \
     return #r
     STR(NOT_READY);
     STR(TIMEOUT);
@@ -118,7 +118,8 @@ static std::vector<const char *> get_available_validation_layers(const char *con
   return std::vector(enabled_layers.begin(), enabled_layers.end());
 }
 
-static std::pair<std::vector<const char *>, std::optional<VkDebugUtilsMessengerCreateInfoEXT>> create_debug_util(bool enable_debugging) {
+static std::pair<std::vector<const char *>, std::optional<VkDebugUtilsMessengerCreateInfoEXT>>
+create_debug_util(bool enable_debugging) {
   std::vector<const char *> layers = get_available_validation_layers<std::size(layers_to_check)>(layers_to_check);
 
   if (enable_debugging) {
@@ -140,7 +141,8 @@ static std::pair<std::vector<const char *>, std::optional<VkDebugUtilsMessengerC
                                            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
 #endif
                         ,
-                        .messageType = 0u | VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                        .messageType = 0u | VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                                       VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
                         .pfnUserCallback = vulkan_debug_message_callback,
                         .pUserData = nullptr,
@@ -158,7 +160,8 @@ static VkSurfaceKHR create_surface(GLFWwindow *window, VkInstance instance) {
   return surface;
 }
 
-static std::tuple<std::optional<uint32_t>, std::optional<uint32_t>> find_queue_indices(VkPhysicalDevice device, VkSurfaceKHR surface) {
+static std::tuple<std::optional<uint32_t>, std::optional<uint32_t>> find_queue_indices(VkPhysicalDevice device,
+                                                                                       VkSurfaceKHR surface) {
   std::optional<uint32_t> graphics_family, present_family;
   uint32_t queue_family_count = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
@@ -183,7 +186,8 @@ static std::tuple<std::optional<uint32_t>, std::optional<uint32_t>> find_queue_i
     }
   }
 
-  trace("Selected graphics family No.{}, present family No.{}", graphics_family.has_value() ? std::to_string(graphics_family.value()) : "(null)",
+  trace("Selected graphics family No.{}, present family No.{}",
+        graphics_family.has_value() ? std::to_string(graphics_family.value()) : "(null)",
         present_family.has_value() ? std::to_string(present_family.value()) : "(null)");
 
   return {graphics_family, present_family};
@@ -217,7 +221,8 @@ static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
     std::vector<VkExtensionProperties> available_extensions(extension_count);
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
-    std::set<const char *, raw_str_less> required_extensions(std::begin(device_extensions), std::end(device_extensions));
+    std::set<const char *, raw_str_less> required_extensions(std::begin(device_extensions),
+                                                             std::end(device_extensions));
     for (const auto &extension : available_extensions) {
       required_extensions.erase(extension.extensionName);
     }
@@ -271,7 +276,8 @@ static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR
   return nullptr;
 }
 
-VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::optional<uint32_t> present_family, VkPhysicalDevice physical_device) {
+VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::optional<uint32_t> present_family,
+                               VkPhysicalDevice physical_device) {
   VkResult result;
   VkDevice device;
 
@@ -315,7 +321,8 @@ VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::opt
 }
 
 std::tuple<VkSwapchainKHR, std::vector<VkImage>, VkFormat, VkExtent2D>
-create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice device, VkSurfaceKHR surface, const uint32_t queue_family[2]) {
+create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice device, VkSurfaceKHR surface,
+                  const uint32_t queue_family[2]) {
   VkResult result;
   VkSurfaceCapabilitiesKHR capabilities;
 
@@ -364,8 +371,10 @@ create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice
 
     VkExtent2D actual_extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
-    actual_extent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actual_extent.width));
-    actual_extent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actual_extent.height));
+    actual_extent.width =
+        std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actual_extent.width));
+    actual_extent.height = std::max(capabilities.minImageExtent.height,
+                                    std::min(capabilities.maxImageExtent.height, actual_extent.height));
 
     extent = actual_extent;
   }
@@ -374,25 +383,25 @@ create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice
                              ? capabilities.maxImageCount
                              : capabilities.minImageCount + 1;
   bool graphics_present_family_same = queue_family[0] == queue_family[1];
-  VkSwapchainCreateInfoKHR swap_chain_create_info{.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-                                                  .pNext = nullptr,
-                                                  .flags = 0,
-                                                  .surface = surface,
-                                                  .minImageCount = capabilities.minImageCount + 1,
-                                                  .imageFormat = format.format,
-                                                  .imageColorSpace = format.colorSpace,
-                                                  .imageExtent = extent,
-                                                  .imageArrayLayers = 1,
-                                                  .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                  .imageSharingMode =
-                                                      graphics_present_family_same ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
-                                                  .queueFamilyIndexCount = uint32_t(graphics_present_family_same ? 0 : 2),
-                                                  .pQueueFamilyIndices = graphics_present_family_same ? nullptr : queue_family,
-                                                  .preTransform = capabilities.currentTransform,
-                                                  .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-                                                  .presentMode = present_mode,
-                                                  .clipped = VK_TRUE,
-                                                  .oldSwapchain = VK_NULL_HANDLE};
+  VkSwapchainCreateInfoKHR swap_chain_create_info{
+      .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+      .pNext = nullptr,
+      .flags = 0,
+      .surface = surface,
+      .minImageCount = capabilities.minImageCount + 1,
+      .imageFormat = format.format,
+      .imageColorSpace = format.colorSpace,
+      .imageExtent = extent,
+      .imageArrayLayers = 1,
+      .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+      .imageSharingMode = graphics_present_family_same ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
+      .queueFamilyIndexCount = uint32_t(graphics_present_family_same ? 0 : 2),
+      .pQueueFamilyIndices = graphics_present_family_same ? nullptr : queue_family,
+      .preTransform = capabilities.currentTransform,
+      .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+      .presentMode = present_mode,
+      .clipped = VK_TRUE,
+      .oldSwapchain = VK_NULL_HANDLE};
 
   VkSwapchainKHR swap_chain;
 
@@ -412,18 +421,21 @@ std::vector<VkImageView> create_image_view(VkDevice device, const std::vector<Vk
 
   std::vector<VkImageView> image_views(images.size());
   for (size_t i = 0; i < image_views.size(); i++) {
-    VkImageViewCreateInfo create_info{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .image = images[i],
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format = format,
-        .components = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                       .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                       .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                       .a = VK_COMPONENT_SWIZZLE_IDENTITY},
-        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
+    VkImageViewCreateInfo create_info{.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                      .pNext = nullptr,
+                                      .flags = 0,
+                                      .image = images[i],
+                                      .viewType = VK_IMAGE_VIEW_TYPE_2D,
+                                      .format = format,
+                                      .components = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                     .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                     .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                     .a = VK_COMPONENT_SWIZZLE_IDENTITY},
+                                      .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                           .baseMipLevel = 0,
+                                                           .levelCount = 1,
+                                                           .baseArrayLayer = 0,
+                                                           .layerCount = 1}};
 
     result = vkCreateImageView(device, &create_info, nullptr, &image_views[i]);
     assert_log(result == VK_SUCCESS, "Failed to create image view with error {}", liu::vk_error_to_string(result));
@@ -473,8 +485,8 @@ VkRenderPass create_render_pass(VkDevice device, VkFormat swap_chain_image_forma
   return render_pass;
 }
 
-std::vector<VkFramebuffer> create_framebuffer(VkDevice device, const std::vector<VkImageView> &image_view, VkExtent2D extent,
-                                              VkRenderPass render_pass) {
+std::vector<VkFramebuffer> create_framebuffer(VkDevice device, const std::vector<VkImageView> &image_view,
+                                              VkExtent2D extent, VkRenderPass render_pass) {
   VkResult result;
   std::vector<VkFramebuffer> frame_buffers;
   for (auto &i : image_view) {
@@ -502,8 +514,10 @@ std::vector<VkFramebuffer> create_framebuffer(VkDevice device, const std::vector
 VkCommandPool create_command_pool(VkDevice device, const uint32_t queue_family[2]) {
   VkResult result;
   VkCommandPool command_pool;
-  VkCommandPoolCreateInfo command_pool_info{
-      .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, .pNext = nullptr, .flags = 0, .queueFamilyIndex = queue_family[0]};
+  VkCommandPoolCreateInfo command_pool_info{.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+                                            .pNext = nullptr,
+                                            .flags = 0,
+                                            .queueFamilyIndex = queue_family[0]};
   result = vkCreateCommandPool(device, &command_pool_info, nullptr, &command_pool);
   assert_log(result == VK_SUCCESS, "Failed to create command pool with error {}", liu::vk_error_to_string(result));
 
@@ -529,20 +543,22 @@ void liu::base_application::init_context() {
   VkResult result;
   int load_result;
 
-  load_result = gladLoadVulkanUserPtr(nullptr, reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), nullptr);
+  load_result =
+      gladLoadVulkanUserPtr(nullptr, reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), nullptr);
   assert_log(load_result != 0, "GLAD load vulkan failed.");
 
   uint32_t vk_api_version;
   vkEnumerateInstanceVersion(&vk_api_version);
-  info("Loaded vulkan with version {}.{}.{}", VK_API_VERSION_MAJOR(vk_api_version), VK_API_VERSION_MINOR(vk_api_version),
-       VK_API_VERSION_PATCH(vk_api_version));
+  info("Loaded vulkan with version {}.{}.{}", VK_API_VERSION_MAJOR(vk_api_version),
+       VK_API_VERSION_MINOR(vk_api_version), VK_API_VERSION_PATCH(vk_api_version));
 
   uint32_t extension_count = 0;
   const char **glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
   std::set<std::string> extensions_set(glfw_extensions, glfw_extensions + extension_count);
 
-  auto [layers, debug_info] = create_debug_util(GLAD_VK_EXT_debug_utils && liu::base_application::enable_validation_layers);
+  auto [layers, debug_info] =
+      create_debug_util(GLAD_VK_EXT_debug_utils && liu::base_application::enable_validation_layers);
 
   if (!debug_info.has_value()) {
     extension_count += 1;
@@ -583,14 +599,16 @@ void liu::base_application::init_context() {
 
   this->physical_device = select_physical_device(instance, surface);
 
-  load_result = gladLoadVulkanUserPtr(physical_device, reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), instance);
+  load_result = gladLoadVulkanUserPtr(physical_device,
+                                      reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), instance);
   assert_log(load_result != 0, "GLAD load vulkan failed.", liu::vk_error_to_string(result));
 
   info("GLAD load vulkan succeeded.");
 
   if (debug_info.has_value()) {
     result = vkCreateDebugUtilsMessengerEXT(instance, &debug_info.value(), nullptr, &debug_messenger);
-    assert_log(result == VK_SUCCESS, "Vulkan debug messenger failed to init with error {}", liu::vk_error_to_string(result));
+    assert_log(result == VK_SUCCESS, "Vulkan debug messenger failed to init with error {}",
+               liu::vk_error_to_string(result));
   }
 
   const auto [graphics_family, present_family] = find_queue_indices(physical_device, surface);
@@ -618,7 +636,8 @@ void liu::base_application::init_context() {
 
   this->command_pool = create_command_pool(device, queue_family);
 
-  this->command_buffers = create_command_buffers(device, static_cast<uint32_t>(swap_chain_frame_buffers.size()), command_pool);
+  this->command_buffers =
+      create_command_buffers(device, static_cast<uint32_t>(swap_chain_frame_buffers.size()), command_pool);
 }
 
 void liu::base_application::clean_context() {

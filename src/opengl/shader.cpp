@@ -2,11 +2,10 @@
 //#include <fstream>
 //#include <iostream>
 //
-//std::ostream &liu::operator<<(std::ostream &out, const liu::attribute_type &type) {
-//#define print_string(name)                                                                                                                           \
-//  case name:                                                                                                                                         \
-//    out << #name;                                                                                                                                    \
-//    break
+// std::ostream &liu::operator<<(std::ostream &out, const liu::attribute_type &type) {
+//#define print_string(name) \
+//  case name: \
+//    out << #name; \ break
 //  switch (type) {
 //    print_string(liu::attribute_type::FLOAT);
 //    print_string(liu::attribute_type::FLOAT_VEC2);
@@ -47,11 +46,10 @@
 //#undef print_string
 //}
 //
-//std::ostream &liu::operator<<(std::ostream &out, const liu::array_type &type) {
-//#define print_string(name)                                                                                                                           \
-//  case name:                                                                                                                                         \
-//    out << #name;                                                                                                                                    \
-//    break
+// std::ostream &liu::operator<<(std::ostream &out, const liu::array_type &type) {
+//#define print_string(name) \
+//  case name: \
+//    out << #name; \ break
 //  switch (type) {
 //    print_string(liu::array_type::BYTE);
 //    print_string(liu::array_type::UNSIGNED_BYTE);
@@ -71,13 +69,14 @@
 //#undef print_string
 //}
 //
-//void liu::shader::build_indices() {
+// void liu::shader::build_indices() {
 //  unsigned attribute_count, attribute_max_length;
 //  glGetProgramiv(program_id, GL_ACTIVE_ATTRIBUTES, reinterpret_cast<std::int32_t *>(&attribute_count));
 //  glGetProgramiv(program_id, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, reinterpret_cast<std::int32_t *>(&attribute_max_length));
-//  trace("There are {} attributes in the program {}, maximum length is {}", attribute_count, name, attribute_max_length);
-//  std::vector<char> attribute_name_vector(static_cast<std::vector<char>::size_type>(attribute_max_length) + 1);
-//  for (unsigned i = 0; i < attribute_count; i++) {
+//  trace("There are {} attributes in the program {}, maximum length is {}", attribute_count, name,
+//  attribute_max_length); std::vector<char>
+//  attribute_name_vector(static_cast<std::vector<char>::size_type>(attribute_max_length) + 1); for (unsigned i = 0; i <
+//  attribute_count; i++) {
 //    std::int32_t length, size;
 //    liu::attribute_type type;
 //    glGetActiveAttrib(program_id, (std::uint32_t)i, static_cast<GLsizei>(attribute_max_length), &length, &size,
@@ -90,9 +89,10 @@
 //  std::uint32_t uniform_count, uniform_max_length;
 //  glGetProgramiv(program_id, GL_ACTIVE_UNIFORMS, reinterpret_cast<std::int32_t *>(&uniform_count));
 //  glGetProgramiv(program_id, GL_ACTIVE_UNIFORM_MAX_LENGTH, reinterpret_cast<std::int32_t *>(&uniform_max_length));
-//  SPDLOG_TRACE("There are {} attributes in the program {}, maximum length is {}", uniform_count, name, uniform_max_length);
-//  std::vector<char> uniform_name_vector(static_cast<std::vector<char>::size_type>(uniform_max_length) + 1);
-//  for (unsigned i = 0; i < uniform_count; i++) {
+//  SPDLOG_TRACE("There are {} attributes in the program {}, maximum length is {}", uniform_count, name,
+//  uniform_max_length); std::vector<char>
+//  uniform_name_vector(static_cast<std::vector<char>::size_type>(uniform_max_length) + 1); for (unsigned i = 0; i <
+//  uniform_count; i++) {
 //    std::int32_t length, size;
 //    liu::attribute_type type;
 //    glGetActiveUniform(program_id, (std::uint32_t)i, static_cast<GLsizei>(uniform_max_length), &length, &size,
@@ -105,7 +105,7 @@
 //  info("Shader {} indices build succeeded.", name);
 //}
 //
-//liu::shader::shader(const std::string &asset_root_path, const std::string &name) : name(name) {
+// liu::shader::shader(const std::string &asset_root_path, const std::string &name) : name(name) {
 //  std::string vertex_file, fragment_file;
 //  std::uint32_t vertex_shader_id, fragment_shader_id;
 //  std::int32_t result;
@@ -121,8 +121,9 @@
 //    }
 //    std::ifstream vin(vertex_file_path), fin(fragment_file_path);
 //    std::copy(std::istreambuf_iterator<char>(vin), std::istreambuf_iterator<char>(), std::back_inserter(vertex_file));
-//    std::copy(std::istreambuf_iterator<char>(fin), std::istreambuf_iterator<char>(), std::back_inserter(fragment_file));
-//    debug("Shader file {} and {} read succeed.", vertex_file_path, fragment_file_path);
+//    std::copy(std::istreambuf_iterator<char>(fin), std::istreambuf_iterator<char>(),
+//    std::back_inserter(fragment_file)); debug("Shader file {} and {} read succeed.", vertex_file_path,
+//    fragment_file_path);
 //  } catch (const std::ifstream::failure &e) {
 //    critical("Error: Shader read failed: {}", e.what());
 //    exit(1);
@@ -196,13 +197,13 @@
 //  build_indices();
 //}
 //
-//void liu::shader::apply(const std::function<void()> &callback) const {
+// void liu::shader::apply(const std::function<void()> &callback) const {
 //  active();
 //  callback();
 //  inactive();
 //}
 //
-//std::int32_t liu::shader::get_attribute_index(const std::string &attribute_name) const {
+// std::int32_t liu::shader::get_attribute_index(const std::string &attribute_name) const {
 //  try {
 //    return attribute_indices.at(attribute_name);
 //  } catch (const std::out_of_range &e) {
@@ -211,7 +212,7 @@
 //  }
 //}
 //
-//std::int32_t liu::shader::get_uniform_index(const std::string &uniform_name) const {
+// std::int32_t liu::shader::get_uniform_index(const std::string &uniform_name) const {
 //  try {
 //    return uniform_indices.at(uniform_name);
 //  } catch (const std::out_of_range &e) {
@@ -220,17 +221,20 @@
 //  }
 //}
 //
-//void liu::shader::activate_attribute(const std::string &attrib_name, int count, liu::array_type type, bool do_normalize, int stride, int offset) {
-//  glVertexAttribPointer(static_cast<std::uint32_t>(get_attribute_index(attrib_name)), count, static_cast<std::uint32_t>(type),
-//                        static_cast<std::uint8_t>(do_normalize), stride, reinterpret_cast<void *>(static_cast<std::size_t>(offset)));
+// void liu::shader::activate_attribute(const std::string &attrib_name, int count, liu::array_type type, bool
+// do_normalize, int stride, int offset) {
+//  glVertexAttribPointer(static_cast<std::uint32_t>(get_attribute_index(attrib_name)), count,
+//  static_cast<std::uint32_t>(type),
+//                        static_cast<std::uint8_t>(do_normalize), stride, reinterpret_cast<void
+//                        *>(static_cast<std::size_t>(offset)));
 //  glEnableVertexAttribArray(static_cast<std::uint32_t>(get_attribute_index(attrib_name)));
 //}
 //
-//void liu::shader::active() const { glUseProgram(program_id); }
+// void liu::shader::active() const { glUseProgram(program_id); }
 //
-//void liu::shader::inactive() { glUseProgram(0); }
+// void liu::shader::inactive() { glUseProgram(0); }
 //
-//void liu::shader::apply(const std::function<void()> &callback) {
+// void liu::shader::apply(const std::function<void()> &callback) {
 //  active();
 //  callback();
 //  inactive();

@@ -1,5 +1,5 @@
-#include <iostream>
 #include <filesystem>
+#include <iostream>
 #include <logger.hpp>
 #include <spdlog/common.h>
 #include <spdlog/pattern_formatter.h>
@@ -42,7 +42,8 @@ void liu::init_logger() {
   file_sink->set_formatter(std::move(formatter));
   file_sink->set_level(spdlog::level::trace);
 
-  std::shared_ptr<spdlog::logger> logger = std::make_shared<spdlog::logger>("homework", spdlog::sinks_init_list({console_sink, file_sink}));
+  std::shared_ptr<spdlog::logger> logger =
+      std::make_shared<spdlog::logger>("homework", spdlog::sinks_init_list({console_sink, file_sink}));
   spdlog::set_default_logger(logger);
   spdlog::set_level(spdlog::level::trace);
   spdlog::flush_on(spdlog::level::warn);

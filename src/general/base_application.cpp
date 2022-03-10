@@ -49,8 +49,8 @@ void liu::base_application::register_callbacks() {
 liu::base_application::base_application(const std::filesystem::path &assets_path, uint32_t width, uint32_t height,
                                         const std::optional<uint32_t> &max_frame_rate, const std::string &title,
                                         std::unique_ptr<callbacks_t> callbacks)
-    : assets_base_path(assets_path), max_frame_rate(max_frame_rate), callbacks(std::move(callbacks)), title(title), window(nullptr), width(width),
-      height(height), should_close(false) {
+    : assets_base_path(assets_path), max_frame_rate(max_frame_rate), callbacks(std::move(callbacks)), title(title),
+      window(nullptr), width(width), height(height), should_close(false) {
   create_window();
   init_context();
   register_callbacks();

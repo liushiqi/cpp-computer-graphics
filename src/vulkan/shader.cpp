@@ -32,7 +32,46 @@ VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
   return VK_SHADER_STAGE_ALL;
 }
 
-void liu::shader::build_indices() {}
+std::pair<std::map<std::string, std::int32_t>, std::map<std::string, std::int32_t>>
+build_indices(const std::vector<std::uint8_t> &byte_code) {
+  //  std::map<std::string, std::int32_t> indices;
+  //  std::map<std::string, std::int32_t> indices_offsets;
+  //  spirv_cross::Compiler comp(byte_code);
+  //  for (auto &id : comp.get_shader_resources().uniform_buffers) {
+  //    indices[id.name] = id.binding;
+  //    indices_offsets[id.name] = id.offset;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().sampled_images) {
+  //    indices[id.name] = id.binding;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().separate_images) {
+  //    indices[id.name] = id.binding;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().separate_samplers) {
+  //    indices[id.name] = id.binding;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().storage_buffers) {
+  //    indices[id.name] = id.binding;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().storage_images) {
+  //    indices[id.name] = id.binding;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().push_constant_buffers) {
+  //    indices[id.name] = id.binding;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().subpass_inputs) {
+  //    indices[id.name] = id.binding;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().input_attachment_refs) {
+  //    indices[id.name] = id.binding;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().stage_inputs) {
+  //    indices[id.name] = id.location;
+  //  }
+  //  for (auto &id : comp.get_shader_resources().stage_outputs) {
+  //    indices[id.name] = id.location;
+  //  }
+}
 
 static const liu::shader_type all_shader_types[] = {
     liu::shader_type::VERTEX,
@@ -66,8 +105,8 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                            .pCode = (unsigned int *)real_file.data()};
       VkShaderModule shader_module;
       result = vkCreateShaderModule(app.device, &create_info, nullptr, &shader_module);
-      assert_log(result == VK_SUCCESS, "Failed to create shader module of shader {} in stage {} with error {}", name, type,
-                 liu::vk_error_to_string(result));
+      assert_log(result == VK_SUCCESS, "Failed to create shader module of shader {} in stage {} with error {}", name,
+                 type, liu::vk_error_to_string(result));
 
       shader_modules.emplace_back(shader_module);
       VkPipelineShaderStageCreateInfo shader_stage_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -81,7 +120,8 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
     }
   }
 
-  VkPipelineVertexInputStateCreateInfo vertex_input_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+  VkPipelineVertexInputStateCreateInfo vertex_input_info{.sType =
+                                                             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
                                                          .pNext = nullptr,
                                                          .flags = 0,
                                                          .vertexBindingDescriptionCount = 0,
@@ -89,11 +129,12 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                                          .vertexAttributeDescriptionCount = 0,
                                                          .pVertexAttributeDescriptions = nullptr};
 
-  VkPipelineInputAssemblyStateCreateInfo input_assemply_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-                                                             .pNext = nullptr,
-                                                             .flags = 0,
-                                                             .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-                                                             .primitiveRestartEnable = VK_FALSE};
+  VkPipelineInputAssemblyStateCreateInfo input_assemply_info{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      .primitiveRestartEnable = VK_FALSE};
 
   VkViewport viewport{.x = 0.0f,
                       .y = 0.0f,
@@ -112,21 +153,23 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                                   .scissorCount = 1,
                                                   .pScissors = &scissor};
 
-  VkPipelineRasterizationStateCreateInfo rasterization_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-                                                            .pNext = nullptr,
-                                                            .flags = 0,
-                                                            .depthClampEnable = VK_FALSE,
-                                                            .rasterizerDiscardEnable = VK_FALSE,
-                                                            .polygonMode = VK_POLYGON_MODE_FILL,
-                                                            .cullMode = VK_CULL_MODE_BACK_BIT,
-                                                            .frontFace = VK_FRONT_FACE_CLOCKWISE,
-                                                            .depthBiasEnable = VK_FALSE,
-                                                            .depthBiasConstantFactor = 0.0f,
-                                                            .depthBiasClamp = 0.0f,
-                                                            .depthBiasSlopeFactor = 0.0f,
-                                                            .lineWidth = 1.0f};
+  VkPipelineRasterizationStateCreateInfo rasterization_info{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .depthClampEnable = VK_FALSE,
+      .rasterizerDiscardEnable = VK_FALSE,
+      .polygonMode = VK_POLYGON_MODE_FILL,
+      .cullMode = VK_CULL_MODE_BACK_BIT,
+      .frontFace = VK_FRONT_FACE_CLOCKWISE,
+      .depthBiasEnable = VK_FALSE,
+      .depthBiasConstantFactor = 0.0f,
+      .depthBiasClamp = 0.0f,
+      .depthBiasSlopeFactor = 0.0f,
+      .lineWidth = 1.0f};
 
-  VkPipelineMultisampleStateCreateInfo multisample_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+  VkPipelineMultisampleStateCreateInfo multisample_info{.sType =
+                                                            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
                                                         .pNext = nullptr,
                                                         .flags = 0,
                                                         .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
@@ -143,10 +186,12 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                                         .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
                                                         .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
                                                         .alphaBlendOp = VK_BLEND_OP_ADD,
-                                                        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                                                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT};
+                                                        .colorWriteMask =
+                                                            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                                            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT};
 
-  VkPipelineColorBlendStateCreateInfo color_blend_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+  VkPipelineColorBlendStateCreateInfo color_blend_info{.sType =
+                                                           VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
                                                        .pNext = nullptr,
                                                        .flags = 0,
                                                        .logicOpEnable = VK_FALSE,
@@ -200,7 +245,7 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
     vkDestroyShaderModule(app.device, module, nullptr);
   }
 
-  build_indices();
+  //  build_indices();
 }
 
 liu::shader::~shader() {

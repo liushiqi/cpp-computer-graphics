@@ -1,13 +1,13 @@
 #include <fstream>
+#include <iomanip>
 #include <iterator>
 #include <logger.hpp>
 #include <shader.hpp>
-#include <iomanip>
 
 std::ostream &liu::operator<<(std::ostream &out, const liu::shader_type &type) {
-#define print_string(name)                                                                                                                           \
-  case liu::shader_type::name:                                                                                                                                         \
-    out << #name;                                                                                                                                    \
+#define print_string(name)                                                                                             \
+  case liu::shader_type::name:                                                                                         \
+    out << #name;                                                                                                      \
     break
   switch (type) {
     print_string(VERTEX);
@@ -43,24 +43,25 @@ std::string shader_type_string(liu::shader_type type) {
   case liu::shader_type::COMPUTE:
     return "comp";
   case liu::shader_type::VK_RAY_RAYGEN:
-    return "rayg.glsl";
+    return "rgen";
   case liu::shader_type::VK_RAY_ANY_HIT:
-    return "hita.glsl";
+    return "rahit";
   case liu::shader_type::VK_RAY_CLOSEST_HIT:
-    return "hitc.glsl";
+    return "rchit";
   case liu::shader_type::VK_RAY_MISS:
-    return "miss.glsl";
+    return "rmiss";
   case liu::shader_type::VK_RAY_INTERSECTION:
-    return "ints.glsl";
+    return "rint";
   case liu::shader_type::VK_RAY_CALLABLE:
-    return "call.glsl";
+    return "rcall";
   }
   return "unknown";
 }
 
-std::optional<std::vector<std::uint8_t>> liu::load_shader(const std::filesystem::path &base_path, const std::string &name,
-                                                          const liu::shader_type &type) {
-  std::filesystem::path shader_path = base_path / "shaders" / "binary" / (name + "." + shader_type_string(type) + ".spv");
+std::optional<std::vector<std::uint8_t>> liu::load_shader(const std::filesystem::path &base_path,
+                                                          const std::string &name, const liu::shader_type &type) {
+  std::filesystem::path shader_path =
+      base_path / "shaders" / "binary" / (name + "." + shader_type_string(type) + ".spv");
 
   if (!std::filesystem::exists(shader_path))
     return std::nullopt;
