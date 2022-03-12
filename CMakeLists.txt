@@ -114,10 +114,10 @@ function(add_shader target_name shader_name)
   foreach (SOURCE ${SHADER_SOURCES})
     string(REGEX REPLACE "assets/shaders/source/${shader_name}" "assets/shaders/binary/${shader_name}" SHADER_FILE_OUTPUT ${SOURCE}.spv)
     add_custom_command(
-      OUTPUT ${SHADER_FILE_OUTPUT}
-      COMMAND glslc_exe -fauto-bind-uniforms -fauto-map-locations -o ${SHADER_FILE_OUTPUT} ${SOURCE}
-      DEPENDS ${SOURCE} glslc_exe
-      VERBATIM
+        OUTPUT ${SHADER_FILE_OUTPUT}
+        COMMAND glslc_exe -fauto-bind-uniforms -fauto-map-locations -o ${SHADER_FILE_OUTPUT} ${SOURCE}
+        DEPENDS ${SOURCE} glslc_exe
+        VERBATIM
     )
 
     set_source_files_properties(${SHADER_FILE_OUTPUT} PROPERTIES GENERATED TRUE)
@@ -130,10 +130,9 @@ function(add_shader target_name shader_name)
   message(STATUS "Added shader ${shader_name} to ${target_name}")
 endfunction()
 
-set(PROGRAM_MAIN_FILE "src/main.cpp")
-file(GLOB_RECURSE PROGRAM_SOURCES "src/general/*.cpp" "src/general/*.c")
-file(GLOB_RECURSE PROGRAM_SOURCES_OPENGL "src/opengl/*.cpp" "src/opengl/*.c")
-file(GLOB_RECURSE PROGRAM_SOURCES_VULKAN "src/vulkan/*.cpp" "src/vulkan/*.c")
+file(GLOB_RECURSE LIB_GRAPHICS_SOURCES "src/general/*.cpp" "src/general/*.c")
+file(GLOB_RECURSE LIB_GRAPHICS_SOURCES_OPENGL "src/opengl/*.cpp" "src/opengl/*.c")
+file(GLOB_RECURSE LIB_GRAPHICS_SOURCES_VULKAN "src/vulkan/*.cpp" "src/vulkan/*.c")
 
 file(GLOB_RECURSE UTILS_SOURCES "utils/src/*.cpp" "utils/src/*.c")
 file(GLOB_RECURSE UTILS_HEADERS "utils/include/*.h")
@@ -141,27 +140,27 @@ add_library(utils ${UTILS_SOURCES})
 target_include_directories(utils PUBLIC utils/include)
 target_precompile_headers(utils PUBLIC ${UTILS_HEADERS})
 
-add_executable(computer_graphics ${PROGRAM_MAIN_FILE} ${PROGRAM_SOURCES})
+add_library(graphics ${LIB_GRAPHICS_SOURCES})
 if (GRAPHICS_USE_VULKAN)
-  target_sources(computer_graphics PUBLIC ${PROGRAM_SOURCES_VULKAN})
-  target_compile_definitions(computer_graphics PRIVATE VULKAN_ENABLED)
+  target_sources(graphics PUBLIC ${LIB_GRAPHICS_SOURCES_VULKAN})
+  target_compile_definitions(graphics PUBLIC VULKAN_ENABLED)
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/binary")
 else ()
-  target_sources(computer_graphics PUBLIC ${PROGRAM_SOURCES_OPENGL})
+  target_sources(graphics PUBLIC ${LIB_GRAPHICS_SOURCES_OPENGL})
 endif ()
 
-enable_warning(computer_graphics)
+enable_warning(graphics)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   if (NOT GRAPHICS_USE_VULKAN)
     # disable sanitizer on vulkan because vulkan itself have memory leaks.
-    enable_sanitizer(computer_graphics)
+    enable_sanitizer(graphics)
   endif ()
-  enable_coverage(computer_graphics)
+  enable_coverage(graphics)
 endif ()
 
-target_compile_definitions(computer_graphics PRIVATE __SOURCE_DIR__="${CMAKE_SOURCE_DIR}")
-target_include_directories(computer_graphics PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(computer_graphics PUBLIC
+target_compile_definitions(graphics PRIVATE __SOURCE_DIR__="${CMAKE_SOURCE_DIR}")
+target_include_directories(graphics PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(graphics PUBLIC
     glfw
     utils
     cxxopts
@@ -170,6 +169,11 @@ target_link_libraries(computer_graphics PUBLIC
     spdlog::spdlog
     ${CMAKE_DL_LIBS})
 
-add_shader(computer_graphics default)
+file(GLOB_RECURSE BIN_GRAPHICS_SOURCES "exe/src/*.cpp" "exe/src/*.c")
+add_executable(display ${BIN_GRAPHICS_SOURCES})
+target_link_libraries(display PUBLIC graphics)
+target_include_directories(display PUBLIC exe/include)
+
+add_shader(display default)
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")

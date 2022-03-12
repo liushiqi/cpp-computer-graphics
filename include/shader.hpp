@@ -1,6 +1,6 @@
 #pragma once
 
-#include <base_application.hpp>
+#include <application_t.hpp>
 #include <filesystem>
 #include <functional>
 #include <glad/vulkan.h>
@@ -58,15 +58,15 @@ private:
   VkPipelineLayout pipeline_layout = nullptr;
   VkPipeline graphics_pipeline = nullptr;
 #else
-  std::uint32_t program_id;
+  std::uint32_t program_id{};
 #endif
-  const liu::base_application &app;
+  const liu::base_application_t &app;
   std::string name;
   std::map<std::string, std::int32_t> attribute_indices;
   std::map<std::string, std::int32_t> uniform_indices;
 
 public:
-  shader(const liu::base_application &app, const std::string &name);
+  shader(const liu::base_application_t &app, const std::string &name);
 
   ~shader();
 

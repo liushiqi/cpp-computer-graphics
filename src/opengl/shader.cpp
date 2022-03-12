@@ -5,7 +5,8 @@
 // std::ostream &liu::operator<<(std::ostream &out, const liu::attribute_type &type) {
 //#define print_string(name) \
 //  case name: \
-//    out << #name; \ break
+//    out << #name; \
+//    break
 //  switch (type) {
 //    print_string(liu::attribute_type::FLOAT);
 //    print_string(liu::attribute_type::FLOAT_VEC2);
@@ -49,7 +50,8 @@
 // std::ostream &liu::operator<<(std::ostream &out, const liu::array_type &type) {
 //#define print_string(name) \
 //  case name: \
-//    out << #name; \ break
+//    out << #name; \
+//    break
 //  switch (type) {
 //    print_string(liu::array_type::BYTE);
 //    print_string(liu::array_type::UNSIGNED_BYTE);

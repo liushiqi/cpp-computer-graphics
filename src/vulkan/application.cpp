@@ -1,4 +1,4 @@
-#include <base_application.hpp>
+#include <application_t.hpp>
 #include <logger.hpp>
 #include <set>
 
@@ -299,7 +299,7 @@ VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::opt
   device_features.geometryShader = VK_TRUE;
 
   std::vector<const char *> layers;
-  if (liu::base_application::enable_validation_layers) {
+  if (liu::application_t::enable_validation_layers) {
     layers = get_available_validation_layers<std::size(layers_to_check)>(layers_to_check);
   }
 
@@ -539,7 +539,7 @@ std::vector<VkCommandBuffer> create_command_buffers(VkDevice device, uint32_t si
   return command_buffer;
 }
 
-void liu::base_application::init_context() {
+void liu::application_t::init_context() {
   VkResult result;
   int load_result;
 
@@ -558,7 +558,7 @@ void liu::base_application::init_context() {
   std::set<std::string> extensions_set(glfw_extensions, glfw_extensions + extension_count);
 
   auto [layers, debug_info] =
-      create_debug_util(GLAD_VK_EXT_debug_utils && liu::base_application::enable_validation_layers);
+      create_debug_util(GLAD_VK_EXT_debug_utils && liu::application_t::enable_validation_layers);
 
   if (!debug_info.has_value()) {
     extension_count += 1;
@@ -640,7 +640,7 @@ void liu::base_application::init_context() {
       create_command_buffers(device, static_cast<uint32_t>(swap_chain_frame_buffers.size()), command_pool);
 }
 
-void liu::base_application::clean_context() {
+void liu::application_t::clean_context() {
   vkDestroyCommandPool(device, command_pool, nullptr);
   for (auto framebuffer : swap_chain_frame_buffers) {
     vkDestroyFramebuffer(device, framebuffer, nullptr);

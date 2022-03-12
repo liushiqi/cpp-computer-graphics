@@ -1,6 +1,8 @@
 #include <logger.hpp>
 #include <shader.hpp>
 #include <spirv_reflect.h>
+#include <application_t.hpp>
+#include <shader.hpp>
 
 VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
   switch (type) {
@@ -34,18 +36,32 @@ VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
 
 std::pair<std::map<std::string, std::int32_t>, std::map<std::string, std::int32_t>>
 build_indices(const std::vector<std::uint8_t> &byte_code) {
+  SpvReflectResult result;
+
   spv_reflect::ShaderModule module(byte_code);
   assert_log(module.GetResult() == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
+
+  if (module.GetShaderStage() == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT) {
+    std::uint32_t input_count;
+    module.EnumerateInputVariables(&input_count, nullptr);
+    std::vector<SpvReflectInterfaceVariable *> inputs(input_count);
+    result = module.EnumerateInputVariables(&input_count, inputs.data());
+    assert_log(result == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
+
+    for (const auto &input : inputs) {
+    }
+  }
+
   return std::make_pair(std::map<std::string, std::int32_t>(), std::map<std::string, std::int32_t>());
 }
 
-liu::shader::shader(const liu::base_application &app, const std::string &name) : app(app), name(name) {
+liu::shader::shader(const liu::base_application_t &app, const std::string &name) : app(app), name(name) {
   VkResult result;
   std::vector<VkShaderModule> shader_modules;
   std::vector<VkPipelineShaderStageCreateInfo> shader_stages_info;
 
   for (auto type : liu::all_shader_types) {
-    auto file = load_shader(app.assets_base_path, name, type);
+    auto file = load_shader(app.get_assets_base_path(), name, type);
     if (file != std::nullopt) {
       auto real_file = file.value();
       VkShaderModuleCreateInfo create_info{.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
@@ -54,7 +70,7 @@ liu::shader::shader(const liu::base_application &app, const std::string &name) :
                                            .codeSize = real_file.size(),
                                            .pCode = (unsigned int *)real_file.data()};
       VkShaderModule shader_module;
-      result = vkCreateShaderModule(app.device, &create_info, nullptr, &shader_module);
+      result = vkCreateShaderModule(app.get_device(), &create_info, nullptr, &shader_module);
       assert_log(result == VK_SUCCESS, "Failed to create shader module of shader {} in stage {} with error {}", name,
                  type, liu::vk_error_to_string(result));
 
