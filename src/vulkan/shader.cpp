@@ -1,8 +1,7 @@
+#include <application_t.hpp>
 #include <logger.hpp>
 #include <shader.hpp>
 #include <spirv_reflect.h>
-#include <application_t.hpp>
-#include <shader.hpp>
 
 VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
   switch (type) {
@@ -70,7 +69,7 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
                                            .codeSize = real_file.size(),
                                            .pCode = (unsigned int *)real_file.data()};
       VkShaderModule shader_module;
-      result = vkCreateShaderModule(app.get_device(), &create_info, nullptr, &shader_module);
+      result = vkCreateShaderModule(app.get_vulkan_context().device, &create_info, nullptr, &shader_module);
       assert_log(result == VK_SUCCESS, "Failed to create shader module of shader {} in stage {} with error {}", name,
                  type, liu::vk_error_to_string(result));
 
@@ -106,12 +105,12 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
 
   VkViewport viewport{.x = 0.0f,
                       .y = 0.0f,
-                      .width = static_cast<float>(app.swap_chain_extent.width),
-                      .height = static_cast<float>(app.swap_chain_extent.height),
+                      .width = static_cast<float>(app.get_vulkan_context().swap_chain_extent.width),
+                      .height = static_cast<float>(app.get_vulkan_context().swap_chain_extent.height),
                       .minDepth = 0.0f,
                       .maxDepth = 1.0f};
 
-  VkRect2D scissor{.offset = {0, 0}, .extent = app.swap_chain_extent};
+  VkRect2D scissor{.offset = {0, 0}, .extent = app.get_vulkan_context().swap_chain_extent};
 
   VkPipelineViewportStateCreateInfo viewport_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
                                                   .pNext = nullptr,
@@ -183,7 +182,7 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
                                                   .pSetLayouts = nullptr,
                                                   .pushConstantRangeCount = 0,
                                                   .pPushConstantRanges = nullptr};
-  result = vkCreatePipelineLayout(app.device, &pipeline_layout_info, nullptr, &pipeline_layout);
+  result = vkCreatePipelineLayout(app.get_vulkan_context().device, &pipeline_layout_info, nullptr, &pipeline_layout);
   assert_log(result == VK_SUCCESS, "Failed to create pipeline layout with error {}", liu::vk_error_to_string(result));
 
   VkGraphicsPipelineCreateInfo pipeline_info{.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -201,22 +200,22 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
                                              .pColorBlendState = &color_blend_info,
                                              .pDynamicState = &dynamic_state_info,
                                              .layout = pipeline_layout,
-                                             .renderPass = app.render_pass,
+                                             .renderPass = app.get_vulkan_context().render_pass,
                                              .subpass = 0,
                                              .basePipelineHandle = VK_NULL_HANDLE,
                                              .basePipelineIndex = -1};
 
-  result = vkCreateGraphicsPipelines(app.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
+  result = vkCreateGraphicsPipelines(app.get_vulkan_context().device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
   assert_log(result == VK_SUCCESS, "Failed to create graphics pipeline with error {}", liu::vk_error_to_string(result));
 
   for (auto module : shader_modules) {
-    vkDestroyShaderModule(app.device, module, nullptr);
+    vkDestroyShaderModule(app.get_vulkan_context().device, module, nullptr);
   }
 }
 
 liu::shader::~shader() {
-  vkDestroyPipeline(app.device, graphics_pipeline, nullptr);
-  vkDestroyPipelineLayout(app.device, pipeline_layout, nullptr);
+  vkDestroyPipeline(app.get_vulkan_context().device, graphics_pipeline, nullptr);
+  vkDestroyPipelineLayout(app.get_vulkan_context().device, pipeline_layout, nullptr);
 }
 
 void liu::shader::apply(std::function<void()> &callback) const {
@@ -244,35 +243,35 @@ std::optional<std::int32_t> liu::shader::get_uniform_index(const std::string &un
 }
 
 void liu::shader::active() const {
-  for (size_t i = 0; i < app.command_buffers.size(); i++) {
+  for (size_t i = 0; i < app.get_vulkan_context().command_buffers.size(); i++) {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    if (vkBeginCommandBuffer(app.command_buffers[i], &beginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(app.get_vulkan_context().command_buffers[i], &beginInfo) != VK_SUCCESS) {
       throw std::runtime_error("failed to begin recording command buffer!");
     }
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = app.render_pass;
-    renderPassInfo.framebuffer = app.swap_chain_frame_buffers[i];
+    renderPassInfo.renderPass = app.get_vulkan_context().render_pass;
+    renderPassInfo.framebuffer = app.get_vulkan_context().swap_chain_frame_buffers[i];
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = app.swap_chain_extent;
+    renderPassInfo.renderArea.extent = app.get_vulkan_context().swap_chain_extent;
 
     VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-    vkCmdBeginRenderPass(app.command_buffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(app.get_vulkan_context().command_buffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(app.command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+    vkCmdBindPipeline(app.get_vulkan_context().command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 
-    vkCmdDraw(app.command_buffers[i], 3, 1, 0, 0);
+    vkCmdDraw(app.get_vulkan_context().command_buffers[i], 3, 1, 0, 0);
   }
 }
 
 void liu::shader::inactive() const {
-  for (auto command_buffer : app.command_buffers) {
+  for (auto command_buffer : app.get_vulkan_context().command_buffers) {
     vkCmdEndRenderPass(command_buffer);
 
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
