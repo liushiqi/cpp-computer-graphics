@@ -299,7 +299,7 @@ VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::opt
   device_features.geometryShader = VK_TRUE;
 
   std::vector<const char *> layers;
-  if (liu::application_t::enable_validation_layers) {
+  if (liu::enable_validation_layers) {
     layers = get_available_validation_layers<std::size(layers_to_check)>(layers_to_check);
   }
 
@@ -539,7 +539,8 @@ std::vector<VkCommandBuffer> create_command_buffers(VkDevice device, uint32_t si
   return command_buffer;
 }
 
-void liu::application_t::init_context() {
+template<liu::callback_v callback_t>
+void liu::application_t<callback_t>::init_context() {
   VkResult result;
   int load_result;
 
@@ -557,8 +558,7 @@ void liu::application_t::init_context() {
 
   std::set<std::string> extensions_set(glfw_extensions, glfw_extensions + extension_count);
 
-  auto [layers, debug_info] =
-      create_debug_util(GLAD_VK_EXT_debug_utils && liu::application_t::enable_validation_layers);
+  auto [layers, debug_info] = create_debug_util(GLAD_VK_EXT_debug_utils && liu::enable_validation_layers);
 
   if (!debug_info.has_value()) {
     extension_count += 1;
@@ -592,70 +592,89 @@ void liu::application_t::init_context() {
                                      .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
                                      .ppEnabledExtensionNames = extensions.data()};
 
-  result = vkCreateInstance(&instance_info, nullptr, &instance);
+  result = vkCreateInstance(&instance_info, nullptr, &vulkan_context.instance);
   assert_log(result == VK_SUCCESS, "Failed to create instance with error {}", liu::vk_error_to_string(result));
 
-  this->surface = create_surface(window, instance);
+  vulkan_context.surface = create_surface(window, vulkan_context.instance);
 
-  this->physical_device = select_physical_device(instance, surface);
+  vulkan_context.physical_device = select_physical_device(vulkan_context.instance, vulkan_context.surface);
 
-  load_result = gladLoadVulkanUserPtr(physical_device,
-                                      reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), instance);
+  load_result =
+      gladLoadVulkanUserPtr(vulkan_context.physical_device,
+                            reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), vulkan_context.instance);
   assert_log(load_result != 0, "GLAD load vulkan failed.", liu::vk_error_to_string(result));
 
   info("GLAD load vulkan succeeded.");
 
   if (debug_info.has_value()) {
-    result = vkCreateDebugUtilsMessengerEXT(instance, &debug_info.value(), nullptr, &debug_messenger);
+    result = vkCreateDebugUtilsMessengerEXT(vulkan_context.instance, &debug_info.value(), nullptr,
+                                            &vulkan_context.debug_messenger);
     assert_log(result == VK_SUCCESS, "Vulkan debug messenger failed to init with error {}",
                liu::vk_error_to_string(result));
   }
 
-  const auto [graphics_family, present_family] = find_queue_indices(physical_device, surface);
-  this->graphics_family = graphics_family;
-  this->present_family = present_family;
+  const auto [graphics_family, present_family] =
+      find_queue_indices(vulkan_context.physical_device, vulkan_context.surface);
+  vulkan_context.graphics_family = graphics_family;
+  vulkan_context.present_family = present_family;
 
-  this->device = create_logical_device(graphics_family, present_family, physical_device);
+  vulkan_context.device = create_logical_device(vulkan_context.graphics_family, vulkan_context.present_family,
+                                                vulkan_context.physical_device);
 
-  vkGetDeviceQueue(device, graphics_family.value(), 0, &graphics_queue);
-  vkGetDeviceQueue(device, present_family.value(), 0, &present_queue);
+  vkGetDeviceQueue(vulkan_context.device, graphics_family.value(), 0, &vulkan_context.graphics_queue);
+  vkGetDeviceQueue(vulkan_context.device, present_family.value(), 0, &vulkan_context.present_queue);
 
   uint32_t queue_family[2] = {graphics_family.value(), present_family.value()};
-  auto [swap_chain, swap_chain_images, swap_chain_image_format, swap_chain_extent] =
-      create_swap_chain(window, physical_device, device, surface, queue_family);
-  this->swap_chain = swap_chain;
-  this->swap_chain_images = swap_chain_images;
-  this->swap_chain_image_format = swap_chain_image_format;
-  this->swap_chain_extent = swap_chain_extent;
+  auto [swap_chain, swap_chain_images, swap_chain_image_format, swap_chain_extent] = create_swap_chain(
+      window, vulkan_context.physical_device, vulkan_context.device, vulkan_context.surface, queue_family);
+  vulkan_context.swap_chain = swap_chain;
+  vulkan_context.swap_chain_images = swap_chain_images;
+  vulkan_context.swap_chain_image_format = swap_chain_image_format;
+  vulkan_context.swap_chain_extent = swap_chain_extent;
 
-  this->swap_chain_image_view = create_image_view(device, swap_chain_images, swap_chain_image_format);
+  vulkan_context.swap_chain_image_view = create_image_view(vulkan_context.device, vulkan_context.swap_chain_images,
+                                                           vulkan_context.swap_chain_image_format);
 
-  this->render_pass = create_render_pass(device, swap_chain_image_format);
+  vulkan_context.render_pass = create_render_pass(vulkan_context.device, vulkan_context.swap_chain_image_format);
 
-  this->swap_chain_frame_buffers = create_framebuffer(device, swap_chain_image_view, swap_chain_extent, render_pass);
+  vulkan_context.swap_chain_frame_buffers =
+      create_framebuffer(vulkan_context.device, vulkan_context.swap_chain_image_view, vulkan_context.swap_chain_extent,
+                         vulkan_context.render_pass);
 
-  this->command_pool = create_command_pool(device, queue_family);
+  vulkan_context.command_pool = create_command_pool(vulkan_context.device, queue_family);
 
-  this->command_buffers =
-      create_command_buffers(device, static_cast<uint32_t>(swap_chain_frame_buffers.size()), command_pool);
+  vulkan_context.command_buffers = create_command_buffers(
+      vulkan_context.device, static_cast<uint32_t>(vulkan_context.swap_chain_frame_buffers.size()),
+      vulkan_context.command_pool);
 }
 
-void liu::application_t::clean_context() {
-  vkDestroyCommandPool(device, command_pool, nullptr);
-  for (auto framebuffer : swap_chain_frame_buffers) {
-    vkDestroyFramebuffer(device, framebuffer, nullptr);
+template<liu::callback_v callback_t>
+const liu::vulkan_context_t &liu::application_t<callback_t>::get_vulkan_context() const {
+  return vulkan_context;
+}
+
+template<liu::callback_v callback_t>
+liu::vulkan_context_t &liu::application_t<callback_t>::get_vulkan_context() {
+  return vulkan_context;
+}
+
+template<liu::callback_v callback_t>
+void liu::application_t<callback_t>::clean_context() {
+  vkDestroyCommandPool(vulkan_context.device, vulkan_context.command_pool, nullptr);
+  for (auto framebuffer : vulkan_context.swap_chain_frame_buffers) {
+    vkDestroyFramebuffer(vulkan_context.device, framebuffer, nullptr);
   }
-  vkDestroyRenderPass(device, render_pass, nullptr);
-  for (auto image_view : swap_chain_image_view) {
-    vkDestroyImageView(device, image_view, nullptr);
+  vkDestroyRenderPass(vulkan_context.device, vulkan_context.render_pass, nullptr);
+  for (auto image_view : vulkan_context.swap_chain_image_view) {
+    vkDestroyImageView(vulkan_context.device, image_view, nullptr);
   }
-  vkDestroySwapchainKHR(device, swap_chain, nullptr);
-  vkDestroyDevice(device, nullptr);
+  vkDestroySwapchainKHR(vulkan_context.device, vulkan_context.swap_chain, nullptr);
+  vkDestroyDevice(vulkan_context.device, nullptr);
   if (GLAD_VK_EXT_debug_utils && enable_validation_layers) {
-    vkDestroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
+    vkDestroyDebugUtilsMessengerEXT(vulkan_context.instance, vulkan_context.debug_messenger, nullptr);
   }
-  vkDestroySurfaceKHR(instance, surface, nullptr);
-  vkDestroyInstance(instance, nullptr);
+  vkDestroySurfaceKHR(vulkan_context.instance, vulkan_context.surface, nullptr);
+  vkDestroyInstance(vulkan_context.instance, nullptr);
 
   info("Clean context finished.");
 }
