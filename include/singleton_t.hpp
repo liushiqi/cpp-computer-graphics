@@ -7,10 +7,18 @@ template<typename T>
 class singleton_t {
 public:
   template<typename... Args>
-  requires std::is_constructible_v<T, Args...>
-  static T &init(Args... args) { std::call_once(init_flag, inst, args...); }
+  static T &init(Args... args) {
+    std::call_once(
+        init_flag, [](Args... args) { inst.reset(new T(std::forward<Args>(args)...)); }, std::forward<Args>(args)...);
+    return *inst.get();
+  }
 
-  static T &get() { return inst; };
+  static T &init() {
+    std::call_once(init_flag, []() { inst.reset(new T); });
+    return *inst.get();
+  }
+
+  static T &get() { return *inst.get(); };
   singleton_t(const singleton_t &) = delete;
   singleton_t &operator=(const singleton_t &) = delete;
 
@@ -20,6 +28,6 @@ protected:
 
 private:
   inline static std::once_flag init_flag;
-  inline static std::shared_ptr<T> inst;
+  inline static std::unique_ptr<T> inst;
 };
 } // namespace liu

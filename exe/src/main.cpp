@@ -1,12 +1,11 @@
 #include <application_t.hpp>
 #include <logger.hpp>
+#include <main_application.hpp>
 #include <shader.hpp>
 #include <singleton_t.hpp>
-#include <main_application.hpp>
 
 void run(const std::filesystem::path &assets_path) {
-  auto app = main_application::init(assets_path);
-  app.lock()->run();
+  main_application::init(assets_path).run();
 }
 
 int main(int argc, const char *argv[]) {

@@ -9,6 +9,7 @@
 #include <atomic>
 #include <filesystem>
 #include <glfw.h>
+#include <logger.hpp>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -29,15 +30,17 @@ std::string vk_error_to_string(VkResult result);
 class shader;
 
 template<typename T>
-concept callback_v = requires(int key, int scan_code, int action, int mode) {
-  T::key_callback(key, scan_code, action, mode);
+concept callback_v = requires(GLFWwindow *window, int key, int scan_code, int action, int mode) {
+  T::key_callback(window, key, scan_code, action, mode);
 }
-and requires(unsigned int codepoint) { T::character_callback(codepoint); }
-and requires(double x_pos, double y_pos) { T::cursor_position_callback(x_pos, y_pos); }
-and requires(int entered) { T::cursor_enter_callback(entered); }
-and requires(int button, int action, int mods) { T::mouse_button_callback(button, action, mods); }
-and requires(double x_offset, double y_offset) { T::scroll_callback(x_offset, y_offset); }
-and requires(int count, const char **paths) { T::drop_callback(count, paths); };
+and requires(GLFWwindow *window, unsigned int codepoint) { T::character_callback(window, codepoint); }
+and requires(GLFWwindow *window, double x_pos, double y_pos) { T::cursor_position_callback(window, x_pos, y_pos); }
+and requires(GLFWwindow *window, int entered) { T::cursor_enter_callback(window, entered); }
+and requires(GLFWwindow *window, int button, int action, int mods) {
+  T::mouse_button_callback(window, button, action, mods);
+}
+and requires(GLFWwindow *window, double x_offset, double y_offset) { T::scroll_callback(window, x_offset, y_offset); }
+and requires(GLFWwindow *window, int count, const char **paths) { T::drop_callback(window, count, paths); };
 
 #ifdef VULKAN_ENABLED
 struct vulkan_context_t {
@@ -87,11 +90,17 @@ static constexpr bool enable_validation_layers = false;
 static constexpr bool enable_validation_layers = true;
 #endif
 
-template<callback_v callback_t>
 class application_t : public base_application_t {
 public:
+  template<callback_v callback_t>
   application_t(const std::filesystem::path &assets_path, uint32_t width, uint32_t height,
-                const std::optional<uint32_t> &max_frame_rate, const std::string &title);
+                const std::optional<uint32_t> &max_frame_rate, const std::string &title, const callback_t &)
+      : assets_base_path(assets_path), max_frame_rate(max_frame_rate), title(title), window(nullptr), width(width),
+        height(height), should_close(false) {
+    create_window();
+    init_context();
+    register_callbacks<callback_t>();
+  }
 
   void run() override;
 
@@ -114,7 +123,17 @@ private:
 
   void init_context();
 
-  void register_callbacks();
+  template<callback_v callback_t>
+  void register_callbacks() {
+    glfwSetKeyCallback(window, callback_t::key_callback);
+    glfwSetCharCallback(window, callback_t::character_callback);
+    glfwSetCursorPosCallback(window, callback_t::cursor_position_callback);
+    glfwSetCursorEnterCallback(window, callback_t::cursor_enter_callback);
+    glfwSetMouseButtonCallback(window, callback_t::mouse_button_callback);
+    glfwSetScrollCallback(window, callback_t::scroll_callback);
+    glfwSetDropCallback(window, callback_t::drop_callback);
+    info("Callbacks register succeeded.");
+  }
 
   void clean_context();
 
@@ -123,7 +142,6 @@ protected:
 
   const std::filesystem::path &assets_base_path;
   const std::optional<uint32_t> max_frame_rate;
-  std::unique_ptr<callback_t> callbacks;
   const std::string &title;
   GLFWwindow *window;
   uint32_t width, height;

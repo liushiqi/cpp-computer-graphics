@@ -539,8 +539,7 @@ std::vector<VkCommandBuffer> create_command_buffers(VkDevice device, uint32_t si
   return command_buffer;
 }
 
-template<liu::callback_v callback_t>
-void liu::application_t<callback_t>::init_context() {
+void liu::application_t::init_context() {
   VkResult result;
   int load_result;
 
@@ -648,18 +647,15 @@ void liu::application_t<callback_t>::init_context() {
       vulkan_context.command_pool);
 }
 
-template<liu::callback_v callback_t>
-const liu::vulkan_context_t &liu::application_t<callback_t>::get_vulkan_context() const {
+const liu::vulkan_context_t &liu::application_t::get_vulkan_context() const {
   return vulkan_context;
 }
 
-template<liu::callback_v callback_t>
-liu::vulkan_context_t &liu::application_t<callback_t>::get_vulkan_context() {
+liu::vulkan_context_t &liu::application_t::get_vulkan_context() {
   return vulkan_context;
 }
 
-template<liu::callback_v callback_t>
-void liu::application_t<callback_t>::clean_context() {
+void liu::application_t::clean_context() {
   vkDestroyCommandPool(vulkan_context.device, vulkan_context.command_pool, nullptr);
   for (auto framebuffer : vulkan_context.swap_chain_frame_buffers) {
     vkDestroyFramebuffer(vulkan_context.device, framebuffer, nullptr);
