@@ -62,8 +62,8 @@ private:
 #endif
   const liu::base_application_t &app;
   std::string name;
-  std::map<std::string, std::int32_t> attribute_indices;
-  std::map<std::string, std::int32_t> uniform_indices;
+  std::map<std::string, std::uint32_t> attribute_indices;
+  std::map<std::string, std::uint32_t> uniform_indices;
 
 public:
   shader(const liu::base_application_t &app, const std::string &name);

@@ -33,25 +33,43 @@ VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
   return VK_SHADER_STAGE_ALL;
 }
 
-std::pair<std::map<std::string, std::int32_t>, std::map<std::string, std::int32_t>>
+std::pair<std::map<std::string, std::uint32_t>, std::map<std::string, std::uint32_t>>
 build_indices(const std::vector<std::uint8_t> &byte_code) {
+  std::map<std::string, std::uint32_t> attribute_indices, uniform_indices;
   SpvReflectResult result;
 
   spv_reflect::ShaderModule module(byte_code);
   assert_log(module.GetResult() == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
 
   if (module.GetShaderStage() == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT) {
-    std::uint32_t input_count;
-    module.EnumerateInputVariables(&input_count, nullptr);
-    std::vector<SpvReflectInterfaceVariable *> inputs(input_count);
-    result = module.EnumerateInputVariables(&input_count, inputs.data());
+    std::uint32_t attribute_count;
+    module.EnumerateInputVariables(&attribute_count, nullptr);
+    std::vector<SpvReflectInterfaceVariable *> attribute_bindings(attribute_count);
+    result = module.EnumerateInputVariables(&attribute_count, attribute_bindings.data());
     assert_log(result == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
 
-    for (const auto &input : inputs) {
+    for (const auto input : attribute_bindings) {
+      const auto location = input->location;
+      const auto name = input->name;
+
+      attribute_indices[name] = location;
     }
   }
 
-  return std::make_pair(std::map<std::string, std::int32_t>(), std::map<std::string, std::int32_t>());
+  std::uint32_t uniform_count;
+  module.EnumerateDescriptorBindings(&uniform_count, nullptr);
+  std::vector<SpvReflectDescriptorBinding *> uniform_bindings(uniform_count);
+  result = module.EnumerateDescriptorBindings(&uniform_count, uniform_bindings.data());
+  assert_log(result == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
+
+  for (const auto binding : uniform_bindings) {
+    const auto location = binding->binding;
+    const auto name = binding->name;
+
+    uniform_indices[name] = location;
+  }
+
+  return std::make_pair(attribute_indices, uniform_indices);
 }
 
 liu::shader::shader(const liu::base_application_t &app, const std::string &name) : app(app), name(name) {
@@ -83,7 +101,9 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
                                                         .pSpecializationInfo = nullptr};
       shader_stages_info.emplace_back(shader_stage_info);
 
-      build_indices(real_file);
+      auto [attribute, uniform] = build_indices(real_file);
+      attribute_indices.insert(attribute.begin(), attribute.end());
+      uniform_indices.insert(uniform.begin(), uniform.end());
     }
   }
 
@@ -205,7 +225,8 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
                                              .basePipelineHandle = VK_NULL_HANDLE,
                                              .basePipelineIndex = -1};
 
-  result = vkCreateGraphicsPipelines(app.get_vulkan_context().device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline);
+  result = vkCreateGraphicsPipelines(app.get_vulkan_context().device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
+                                     &graphics_pipeline);
   assert_log(result == VK_SUCCESS, "Failed to create graphics pipeline with error {}", liu::vk_error_to_string(result));
 
   for (auto module : shader_modules) {
