@@ -95,7 +95,7 @@ function(add_shader assets_dir target_name shader_name)
   file(MAKE_DIRECTORY "${assets_dir}/shaders/binary")
 
   foreach (SOURCE ${SHADER_SOURCES})
-    string(REGEX REPLACE "${assets_dir}/shaders/source/${shader_name}" "${assets_dir}/shaders/binary/${shader_name}" SHADER_FILE_OUTPUT ${SOURCE}.spv)
+    string(REPLACE "${assets_dir}/shaders/source/${shader_name}" "${assets_dir}/shaders/binary/${shader_name}" SHADER_FILE_OUTPUT ${SOURCE}.spv)
     if (GRAPHICS_USE_VULKAN)
       set(SHADER_COMPILE_OPTION "--target-env=vulkan1.3")
     else ()
