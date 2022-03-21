@@ -15,6 +15,14 @@ endif ()
 
 set(ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
 set(ASSETS_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/assets")
-file(REMOVE_RECURSE "${ASSETS_BUILD_DIR}")
-file(COPY ${ASSETS_DIR} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-add_shader(${CMAKE_CURRENT_BINARY_DIR}/assets liu_graphics_main default)
+file(GLOB_RECURSE ASSETS_FILES "${ASSETS_DIR}/*")
+string(REGEX REPLACE "${ASSETS_DIR}" "${ASSETS_BUILD_DIR}" ASSETS_BUILD_FILES "${ASSETS_FILES}")
+add_custom_target(assets_build
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_DIR} ${CMAKE_CURRENT_BINARY_DIR}/assets
+    DEPENDS ${ASSETS_FILES}
+    BYPRODUCTS ${ASSETS_BUILD_FILES}
+    VERBATIM)
+set_source_files_properties(${ASSETS_BUILD_FILES} PROPERTIES GENERATED TRUE)
+add_dependencies(liu_graphics_main assets_build)
+
+add_shader(${ASSETS_BUILD_DIR} liu_graphics_main default)

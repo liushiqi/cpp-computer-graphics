@@ -1,4 +1,4 @@
-#include <application_t.hpp>
+#include <application.hpp>
 #include <logger.hpp>
 #include <shader.hpp>
 #include <spirv_reflect.h>
@@ -208,7 +208,7 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
   VkGraphicsPipelineCreateInfo pipeline_info{.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                              .pNext = nullptr,
                                              .flags = 0,
-                                             .stageCount = static_cast<uint32_t>(shader_stages_info.size()),
+                                             .stageCount = static_cast<std::uint32_t>(shader_stages_info.size()),
                                              .pStages = shader_stages_info.data(),
                                              .pVertexInputState = &vertex_input_info,
                                              .pInputAssemblyState = &input_assemply_info,

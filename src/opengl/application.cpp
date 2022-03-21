@@ -1,4 +1,4 @@
-#include <application_t.hpp>
+#include <application.hpp>
 #include <glad/gl.h>
 #include <logger.hpp>
 
@@ -123,7 +123,7 @@ void liu::init_context() {
 
 void liu::clean_context() { glfwTerminate(); }
 
-void liu::application_t::init_context() {
+void liu::application::init_context() {
   int result = gladLoadGL((GLADloadfunc)glfwGetProcAddress);
   assert_log(result == VK_SUCCESS, "Failed to load OpenGL");
 
@@ -135,4 +135,4 @@ void liu::application_t::init_context() {
   }
 }
 
-void liu::application_t::clean_context() { info("Clean context finished."); }
+void liu::application::clean_context() { info("Clean context finished."); }

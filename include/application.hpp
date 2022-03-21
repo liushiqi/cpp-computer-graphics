@@ -49,7 +49,7 @@ struct vulkan_context_t {
   VkDebugUtilsMessengerEXT debug_messenger = nullptr;
   VkSurfaceKHR surface = nullptr;
   VkDevice device = nullptr;
-  std::optional<uint32_t> graphics_family = std::nullopt, present_family = std::nullopt;
+  std::optional<std::uint32_t> graphics_family = std::nullopt, present_family = std::nullopt;
   VkQueue graphics_queue = nullptr, present_queue = nullptr;
   VkSwapchainKHR swap_chain = nullptr;
   std::vector<VkImage> swap_chain_images{};
@@ -73,7 +73,7 @@ public:
 
   virtual void close() = 0;
 
-  virtual void resize(uint32_t width, uint32_t height) = 0;
+  virtual void resize(std::uint32_t width, std::uint32_t height) = 0;
 
   [[nodiscard]] virtual const std::filesystem::path &get_assets_base_path() const = 0;
 
@@ -90,11 +90,11 @@ static constexpr bool enable_validation_layers = false;
 static constexpr bool enable_validation_layers = true;
 #endif
 
-class application_t : public base_application_t {
+class application : public base_application_t {
 public:
   template<callback_v callback_t>
-  application_t(const std::filesystem::path &assets_path, uint32_t width, uint32_t height,
-                const std::optional<uint32_t> &max_frame_rate, const std::string &title, const callback_t &)
+  application(const std::filesystem::path &assets_path, std::uint32_t width, std::uint32_t height,
+              const std::optional<std::uint32_t> &max_frame_rate, const std::string &title, const callback_t &)
       : assets_base_path(assets_path), max_frame_rate(max_frame_rate), title(title), window(nullptr), width(width),
         height(height), should_close(false) {
     create_window();
@@ -106,11 +106,11 @@ public:
 
   void close() override;
 
-  void resize(uint32_t width, uint32_t height) override;
+  void resize(std::uint32_t width, std::uint32_t height) override;
 
   [[nodiscard]] const std::filesystem::path &get_assets_base_path() const override;
 
-  ~application_t();
+  ~application();
 
 #ifdef VULKAN_ENABLED
   [[nodiscard]] const vulkan_context_t &get_vulkan_context() const override;
@@ -141,10 +141,10 @@ protected:
   virtual void main_loop() = 0;
 
   const std::filesystem::path &assets_base_path;
-  const std::optional<uint32_t> max_frame_rate;
+  const std::optional<std::uint32_t> max_frame_rate;
   const std::string &title;
   GLFWwindow *window;
-  uint32_t width, height;
+  std::uint32_t width, height;
   std::atomic<bool> should_close;
 #ifdef VULKAN_ENABLED
   vulkan_context_t vulkan_context;

@@ -4,7 +4,7 @@
 
 namespace liu {
 template<typename T>
-class singleton_t {
+class singleton {
 public:
   template<typename... Args>
   static T &init(Args... args) {
@@ -18,13 +18,17 @@ public:
     return *inst.get();
   }
 
+  static void destroy() {
+    inst.reset();
+  }
+
   static T &get() { return *inst.get(); };
-  singleton_t(const singleton_t &) = delete;
-  singleton_t &operator=(const singleton_t &) = delete;
+  singleton(const singleton &) = delete;
+  singleton &operator=(const singleton &) = delete;
 
 protected:
-  singleton_t() = default;
-  ~singleton_t() = default;
+  singleton() = default;
+  ~singleton() = default;
 
 private:
   inline static std::once_flag init_flag;

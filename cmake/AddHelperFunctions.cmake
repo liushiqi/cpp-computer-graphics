@@ -89,35 +89,3 @@ function(enable_warning target_name)
   set_target_properties(${target_name} PROPERTIES COMPILE_OPTIONS "${ALL_FLAGS}")
   message(STATUS "Enabled warning for target ${target_name} with flags ${ALL_FLAGS}")
 endfunction()
-
-function(add_shader assets_dir target_name shader_name)
-  file(GLOB SHADER_SOURCES "${assets_dir}/shaders/source/${shader_name}*")
-  file(MAKE_DIRECTORY "${assets_dir}/shaders/binary")
-
-  foreach (SOURCE ${SHADER_SOURCES})
-    string(REGEX REPLACE "${assets_dir}/shaders/source/${shader_name}.(glsl|hlsl)" "${assets_dir}/shaders/binary/${shader_name}" SHADER_FILE_OUTPUT ${SOURCE}.spv)
-    message(STATUS "${SHADER_FILE_OUTPUT}")
-    string(REGEX MATCH "glsl|hlsl" SHADER_EXT ${SOURCE})
-    message(STATUS "${SHADER_EXT}")
-    if (GRAPHICS_USE_VULKAN)
-      set(SHADER_COMPILE_OPTION "--target-env=vulkan1.3")
-    else ()
-      set(SHADER_COMPILE_OPTION "--target-env=opengl")
-    endif ()
-
-    add_custom_command(
-        OUTPUT ${SHADER_FILE_OUTPUT}
-        COMMAND glslc_exe -fauto-bind-uniforms -fauto-map-locations ${SHADER_COMPILE_OPTION} -o ${SHADER_FILE_OUTPUT} ${SOURCE}
-        DEPENDS ${SOURCE} glslc_exe
-        VERBATIM
-    )
-
-    set_source_files_properties(${SHADER_FILE_OUTPUT} PROPERTIES GENERATED TRUE)
-
-    target_sources(${target_name} PRIVATE ${SHADER_FILE_OUTPUT})
-
-    message(STATUS "Added shader file ${SOURCE}")
-  endforeach ()
-
-  message(STATUS "Added shader ${shader_name} to ${target_name}")
-endfunction()

@@ -21,7 +21,10 @@ void main_callback_t::scroll_callback(GLFWwindow *window, double x_offset, doubl
 void main_callback_t::drop_callback(GLFWwindow *window, int count, const char **paths) {}
 
 main_application::main_application(const std::filesystem::path &assets_path)
-    : application_t(assets_path, 800, 600, std::nullopt, "Main Application", main_callback_t()),
+    : application(assets_path, 800, 600, std::nullopt, "Main Application", main_callback_t()),
       default_shader(*this, "default") {}
 
-void main_application::main_loop() {}
+void main_application::main_loop() {
+//  default_shader.active();
+//  default_shader.inactive();
+}

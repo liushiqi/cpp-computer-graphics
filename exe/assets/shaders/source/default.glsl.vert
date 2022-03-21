@@ -9,10 +9,10 @@ layout(location=0) out vec3 pos_result;
 layout(location=1) out vec3 norm_result;
 layout(location=2) out vec2 coord_result;
 
-layout(std430, binding=0) uniform mat { mat4 position_matrix; };
+layout(binding=0) uniform pos_mat_uniform { mat4 pos_mat; } pos_mat;
 
 void main() {
-  gl_Position = position_matrix * vec4(position, 1.0f);
+  gl_Position = pos_mat.pos_mat * vec4(position, 1.0f);
   pos_result = position;
   norm_result = normal;
   coord_result = coordinate;

@@ -18,6 +18,7 @@ find_package(glfw3 3.3 REQUIRED FATAL_ERROR)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(AddHelperFunctions)
+include(AddShader)
 
 file(GLOB_RECURSE LIB_GRAPHICS_SOURCES "src/general/*.cpp" "src/general/*.c")
 file(GLOB_RECURSE LIB_GRAPHICS_SOURCES_OPENGL "src/opengl/*.cpp" "src/opengl/*.c")
@@ -46,6 +47,7 @@ target_link_libraries(liu_graphics PUBLIC
     glm::glm
     assimp::assimp
     spdlog::spdlog
+    spirv-reflect-static
     ${CMAKE_DL_LIBS})
 target_precompile_headers(liu_graphics PUBLIC ${LIB_GRAPHICS_HEADERS})
 

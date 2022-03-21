@@ -1,8 +1,8 @@
-#include <application_t.hpp>
+#include <application.hpp>
 #include <logger.hpp>
 #include <thread>
 
-void liu::application_t::create_window() {
+void liu::application::create_window() {
   window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.c_str(), nullptr, nullptr);
   assert_log(window != nullptr, "GLFW create window failed.");
 
@@ -11,7 +11,7 @@ void liu::application_t::create_window() {
   info("Window create succeeded.");
 }
 
-void liu::application_t::run() {
+void liu::application::run() {
   auto second_begin = std::chrono::system_clock::now();
   int frame_count = 0;
   while (true) {
@@ -30,7 +30,7 @@ void liu::application_t::run() {
     frame_count += 1;
 
     if (max_frame_rate != std::nullopt) {
-      uint32_t real_max_frame_rate = max_frame_rate.value();
+      std::uint32_t real_max_frame_rate = max_frame_rate.value();
       if (auto duration = (std::chrono::system_clock::now() - start); duration < (1.0s / real_max_frame_rate)) {
         std::this_thread::sleep_for(1.0s / real_max_frame_rate - duration);
       }
@@ -43,17 +43,17 @@ void liu::application_t::run() {
   }
 }
 
-void liu::application_t::resize(uint32_t width, uint32_t height) {
+void liu::application::resize(std::uint32_t width, std::uint32_t height) {
   this->width = width;
   this->height = height;
   glfwSetWindowSize(window, static_cast<int>(width), static_cast<int>(height));
 }
 
-const std::filesystem::path &liu::application_t::get_assets_base_path() const { return assets_base_path; }
+const std::filesystem::path &liu::application::get_assets_base_path() const { return assets_base_path; }
 
-void liu::application_t::close() { should_close = true; }
+void liu::application::close() { should_close = true; }
 
-liu::application_t::application_t::~application_t() {
+liu::application::application::~application() {
   glfwDestroyWindow(window);
   clean_context();
 }

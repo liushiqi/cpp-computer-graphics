@@ -1,4 +1,4 @@
-#include <application_t.hpp>
+#include <application.hpp>
 #include <logger.hpp>
 #include <set>
 
@@ -102,7 +102,7 @@ template<std::size_t i>
 static std::vector<const char *> get_available_validation_layers(const char *const (&to_check)[i]) {
   std::set<const char *, raw_str_less> enabled_layers;
 
-  uint32_t available_layers_count;
+  std::uint32_t available_layers_count;
   vkEnumerateInstanceLayerProperties(&available_layers_count, nullptr);
 
   std::vector<VkLayerProperties> available_layers(available_layers_count);
@@ -160,16 +160,16 @@ static VkSurfaceKHR create_surface(GLFWwindow *window, VkInstance instance) {
   return surface;
 }
 
-static std::tuple<std::optional<uint32_t>, std::optional<uint32_t>> find_queue_indices(VkPhysicalDevice device,
+static std::tuple<std::optional<std::uint32_t>, std::optional<std::uint32_t>> find_queue_indices(VkPhysicalDevice device,
                                                                                        VkSurfaceKHR surface) {
-  std::optional<uint32_t> graphics_family, present_family;
-  uint32_t queue_family_count = 0;
+  std::optional<std::uint32_t> graphics_family, present_family;
+  std::uint32_t queue_family_count = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
 
   std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
 
-  for (uint32_t i = 0; i < queue_family_count; ++i) {
+  for (std::uint32_t i = 0; i < queue_family_count; ++i) {
     if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
       graphics_family = i;
     }
@@ -194,7 +194,7 @@ static std::tuple<std::optional<uint32_t>, std::optional<uint32_t>> find_queue_i
 }
 
 static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR surface) {
-  uint32_t device_count;
+  std::uint32_t device_count;
   vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
   assert_log(device_count > 0, "No valid physical device for vulkan.");
 
@@ -217,7 +217,7 @@ static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR
       continue;
     }
 
-    uint32_t extension_count;
+    std::uint32_t extension_count;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
     std::vector<VkExtensionProperties> available_extensions(extension_count);
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
@@ -276,16 +276,16 @@ static VkPhysicalDevice select_physical_device(VkInstance instance, VkSurfaceKHR
   return nullptr;
 }
 
-VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::optional<uint32_t> present_family,
+VkDevice create_logical_device(std::optional<std::uint32_t> graphics_family, std::optional<std::uint32_t> present_family,
                                VkPhysicalDevice physical_device) {
   VkResult result;
   VkDevice device;
 
   std::vector<VkDeviceQueueCreateInfo> queue_infos;
-  std::set<uint32_t> unique_indices = {graphics_family.value(), present_family.value()};
+  std::set<std::uint32_t> unique_indices = {graphics_family.value(), present_family.value()};
 
   float queue_priority = 1.0f;
-  for (uint32_t queue_family : unique_indices) {
+  for (std::uint32_t queue_family : unique_indices) {
     VkDeviceQueueCreateInfo queue_info{.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
                                        .pNext = nullptr,
                                        .flags = 0,
@@ -306,9 +306,9 @@ VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::opt
   VkDeviceCreateInfo device_info{.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
                                  .pNext = nullptr,
                                  .flags = 0,
-                                 .queueCreateInfoCount = static_cast<uint32_t>(queue_infos.size()),
+                                 .queueCreateInfoCount = static_cast<std::uint32_t>(queue_infos.size()),
                                  .pQueueCreateInfos = queue_infos.data(),
-                                 .enabledLayerCount = static_cast<uint32_t>(layers.size()),
+                                 .enabledLayerCount = static_cast<std::uint32_t>(layers.size()),
                                  .ppEnabledLayerNames = layers.empty() ? nullptr : layers.data(),
                                  .enabledExtensionCount = std::size(device_extensions),
                                  .ppEnabledExtensionNames = device_extensions,
@@ -322,13 +322,13 @@ VkDevice create_logical_device(std::optional<uint32_t> graphics_family, std::opt
 
 std::tuple<VkSwapchainKHR, std::vector<VkImage>, VkFormat, VkExtent2D>
 create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice device, VkSurfaceKHR surface,
-                  const uint32_t queue_family[2]) {
+                  const std::uint32_t queue_family[2]) {
   VkResult result;
   VkSurfaceCapabilitiesKHR capabilities;
 
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
 
-  uint32_t format_count;
+  std::uint32_t format_count;
   std::vector<VkSurfaceFormatKHR> formats;
   result = vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, nullptr);
   assert_log(result == VK_SUCCESS, "Failed to get surface formats with error {}", liu::vk_error_to_string(result));
@@ -346,7 +346,7 @@ create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice
     }
   }
 
-  uint32_t present_mode_count;
+  std::uint32_t present_mode_count;
   std::vector<VkPresentModeKHR> present_modes;
   VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
   vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &present_mode_count, nullptr);
@@ -369,7 +369,7 @@ create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    VkExtent2D actual_extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+    VkExtent2D actual_extent = {static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height)};
 
     actual_extent.width =
         std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actual_extent.width));
@@ -379,7 +379,7 @@ create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice
     extent = actual_extent;
   }
 
-  uint32_t image_count = capabilities.maxImageCount > 0 && capabilities.minImageCount + 1 > capabilities.maxImageCount
+  std::uint32_t image_count = capabilities.maxImageCount > 0 && capabilities.minImageCount + 1 > capabilities.maxImageCount
                              ? capabilities.maxImageCount
                              : capabilities.minImageCount + 1;
   bool graphics_present_family_same = queue_family[0] == queue_family[1];
@@ -395,7 +395,7 @@ create_swap_chain(GLFWwindow *window, VkPhysicalDevice physical_device, VkDevice
       .imageArrayLayers = 1,
       .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
       .imageSharingMode = graphics_present_family_same ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
-      .queueFamilyIndexCount = uint32_t(graphics_present_family_same ? 0 : 2),
+      .queueFamilyIndexCount = static_cast<std::uint32_t>(graphics_present_family_same ? 0 : 2),
       .pQueueFamilyIndices = graphics_present_family_same ? nullptr : queue_family,
       .preTransform = capabilities.currentTransform,
       .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
@@ -511,7 +511,7 @@ std::vector<VkFramebuffer> create_framebuffer(VkDevice device, const std::vector
   return frame_buffers;
 }
 
-VkCommandPool create_command_pool(VkDevice device, const uint32_t queue_family[2]) {
+VkCommandPool create_command_pool(VkDevice device, const std::uint32_t queue_family[2]) {
   VkResult result;
   VkCommandPool command_pool;
   VkCommandPoolCreateInfo command_pool_info{.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -524,7 +524,7 @@ VkCommandPool create_command_pool(VkDevice device, const uint32_t queue_family[2
   return command_pool;
 }
 
-std::vector<VkCommandBuffer> create_command_buffers(VkDevice device, uint32_t size, VkCommandPool command_pool) {
+std::vector<VkCommandBuffer> create_command_buffers(VkDevice device, std::uint32_t size, VkCommandPool command_pool) {
   VkResult result;
   std::vector<VkCommandBuffer> command_buffer;
   command_buffer.resize(size);
@@ -532,14 +532,14 @@ std::vector<VkCommandBuffer> create_command_buffers(VkDevice device, uint32_t si
                                                   .pNext = nullptr,
                                                   .commandPool = command_pool,
                                                   .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                                                  .commandBufferCount = (uint32_t)command_buffer.size()};
+                                                  .commandBufferCount = (std::uint32_t)command_buffer.size()};
   result = vkAllocateCommandBuffers(device, &command_buffer_info, command_buffer.data());
   assert_log(result == VK_SUCCESS, "Failed to create command pool with error {}", liu::vk_error_to_string(result));
 
   return command_buffer;
 }
 
-void liu::application_t::init_context() {
+void liu::application::init_context() {
   VkResult result;
   int load_result;
 
@@ -547,12 +547,12 @@ void liu::application_t::init_context() {
       gladLoadVulkanUserPtr(nullptr, reinterpret_cast<GLADuserptrloadfunc>(glfwGetInstanceProcAddress), nullptr);
   assert_log(load_result != 0, "GLAD load vulkan failed.");
 
-  uint32_t vk_api_version;
+  std::uint32_t vk_api_version;
   vkEnumerateInstanceVersion(&vk_api_version);
   info("Loaded vulkan with version {}.{}.{}", VK_API_VERSION_MAJOR(vk_api_version),
        VK_API_VERSION_MINOR(vk_api_version), VK_API_VERSION_PATCH(vk_api_version));
 
-  uint32_t extension_count = 0;
+  std::uint32_t extension_count = 0;
   const char **glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
   std::set<std::string> extensions_set(glfw_extensions, glfw_extensions + extension_count);
@@ -586,9 +586,9 @@ void liu::application_t::init_context() {
                                      .pNext = debug_info.has_value() ? &debug_info.value() : nullptr,
                                      .flags = 0,
                                      .pApplicationInfo = &app_info,
-                                     .enabledLayerCount = static_cast<uint32_t>(layers.size()),
+                                     .enabledLayerCount = static_cast<std::uint32_t>(layers.size()),
                                      .ppEnabledLayerNames = layers.empty() ? nullptr : layers.data(),
-                                     .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
+                                     .enabledExtensionCount = static_cast<std::uint32_t>(extensions.size()),
                                      .ppEnabledExtensionNames = extensions.data()};
 
   result = vkCreateInstance(&instance_info, nullptr, &vulkan_context.instance);
@@ -623,7 +623,7 @@ void liu::application_t::init_context() {
   vkGetDeviceQueue(vulkan_context.device, graphics_family.value(), 0, &vulkan_context.graphics_queue);
   vkGetDeviceQueue(vulkan_context.device, present_family.value(), 0, &vulkan_context.present_queue);
 
-  uint32_t queue_family[2] = {graphics_family.value(), present_family.value()};
+  std::uint32_t queue_family[2] = {graphics_family.value(), present_family.value()};
   auto [swap_chain, swap_chain_images, swap_chain_image_format, swap_chain_extent] = create_swap_chain(
       window, vulkan_context.physical_device, vulkan_context.device, vulkan_context.surface, queue_family);
   vulkan_context.swap_chain = swap_chain;
@@ -643,19 +643,19 @@ void liu::application_t::init_context() {
   vulkan_context.command_pool = create_command_pool(vulkan_context.device, queue_family);
 
   vulkan_context.command_buffers = create_command_buffers(
-      vulkan_context.device, static_cast<uint32_t>(vulkan_context.swap_chain_frame_buffers.size()),
+      vulkan_context.device, static_cast<std::uint32_t>(vulkan_context.swap_chain_frame_buffers.size()),
       vulkan_context.command_pool);
 }
 
-const liu::vulkan_context_t &liu::application_t::get_vulkan_context() const {
+const liu::vulkan_context_t &liu::application::get_vulkan_context() const {
   return vulkan_context;
 }
 
-liu::vulkan_context_t &liu::application_t::get_vulkan_context() {
+liu::vulkan_context_t &liu::application::get_vulkan_context() {
   return vulkan_context;
 }
 
-void liu::application_t::clean_context() {
+void liu::application::clean_context() {
   vkDestroyCommandPool(vulkan_context.device, vulkan_context.command_pool, nullptr);
   for (auto framebuffer : vulkan_context.swap_chain_frame_buffers) {
     vkDestroyFramebuffer(vulkan_context.device, framebuffer, nullptr);

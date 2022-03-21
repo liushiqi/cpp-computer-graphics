@@ -1,8 +1,8 @@
 #pragma once
 
-#include <application_t.hpp>
+#include <application.hpp>
 #include <shader.hpp>
-#include <singleton_t.hpp>
+#include <singleton.hpp>
 
 class main_callback_t {
 public:
@@ -21,7 +21,7 @@ public:
   static void drop_callback(GLFWwindow *window, int count, const char **paths);
 };
 
-class main_application : public liu::application_t, public liu::singleton_t<main_application> {
+class main_application : public liu::application, public liu::singleton<main_application> {
 protected:
   explicit main_application(const std::filesystem::path &assets_path);
 

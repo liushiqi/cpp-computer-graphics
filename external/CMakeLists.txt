@@ -32,8 +32,13 @@ set(SHADERC_SPIRV_TOOLS_DIR "${CMAKE_SOURCE_DIR}/external/spirv-tools" CACHE STR
 set(SHADERC_SPIRV_HEADERS_DIR "${CMAKE_SOURCE_DIR}/external/spirv-headers" CACHE STRING "" FORCE)
 set(SHADERC_GLSLANG_DIR "${CMAKE_SOURCE_DIR}/external/glslang" CACHE STRING "" FORCE)
 
+set(SPIRV_REFLECT_EXECUTABLE OFF)
+set(SPIRV_REFLECT_EXAMPLES OFF)
+set(SPIRV_REFLECT_STATIC_LIB ON)
+
 add_subdirectory(assimp)
 add_subdirectory(cxxopts)
 add_subdirectory(glm)
 add_subdirectory(shaderrc)
 add_subdirectory(spdlog)
+add_subdirectory(spirv-reflect)
