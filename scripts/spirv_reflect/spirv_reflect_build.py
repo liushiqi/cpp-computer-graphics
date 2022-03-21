@@ -9,9 +9,8 @@ ffi = FFI()
 ffi.set_source(
     "build.spirv_reflect_cffi",
     "#include <spirv_reflect.h>",
-    libraries=["spirv-reflect-staticd"],
-    include_dirs=[os.path.join(os.getcwd(), "../../external/spirv-reflect")],
-    library_dirs=[os.path.join(os.environ["CMAKE_CURRENT_BINARY_DIR"], "external/spirv-reflect")]
+    sources=["spirv_reflect.c"],
+    include_dirs=[os.getcwd()]
 )
 
 with open(os.path.join(os.path.dirname(__file__), "spirv_reflect_def.h")) as f:

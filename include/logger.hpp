@@ -9,11 +9,11 @@
 #define SPDLOG_FUNCTION __PRETTY_FUNCTION__
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 26812)
 #pragma warning(disable : 26495)
-#elif __clang__
+#elif defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #endif
@@ -21,9 +21,9 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 // clang-format on
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
 #pragma warning(pop)
-#elif __clang__
+#elif defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 

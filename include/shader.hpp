@@ -1,5 +1,6 @@
 #pragma once
 
+#include "input_description.hpp"
 #include <application.hpp>
 #include <filesystem>
 #include <functional>
@@ -49,7 +50,7 @@ constexpr liu::shader_type all_shader_types[] = {
 std::ostream &operator<<(std::ostream &out, const shader_type &type);
 
 std::optional<std::vector<std::uint8_t>> load_shader(const std::filesystem::path &base_path, const std::string &name,
-                                                      const liu::shader_type &type);
+                                                     const liu::shader_type &type);
 
 class shader {
 private:
@@ -63,7 +64,7 @@ private:
   std::string name;
 
 public:
-  shader(const liu::base_application_t &app, const std::string &name);
+  shader(const liu::base_application_t &app, const std::string &name, const liu::input_description &input);
 
   ~shader();
 

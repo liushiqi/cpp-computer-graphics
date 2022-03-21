@@ -31,5 +31,5 @@ private:
   liu::shader default_shader;
 
   friend class main_callback_t;
-  friend class liu::singleton_t<main_application>;
+  friend class liu::singleton<main_application>;
 };

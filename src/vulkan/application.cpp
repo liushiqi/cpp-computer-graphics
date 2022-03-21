@@ -297,6 +297,8 @@ VkDevice create_logical_device(std::optional<std::uint32_t> graphics_family, std
 
   VkPhysicalDeviceFeatures device_features{};
   device_features.geometryShader = VK_TRUE;
+  device_features.shaderFloat64 = VK_TRUE;
+  device_features.shaderInt64 = VK_TRUE;
 
   std::vector<const char *> layers;
   if (liu::enable_validation_layers) {

@@ -1,7 +1,6 @@
 #include <application.hpp>
 #include <logger.hpp>
 #include <shader.hpp>
-#include <spirv_reflect.h>
 
 VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
   switch (type) {
@@ -33,46 +32,62 @@ VkShaderStageFlagBits shader_type_to_stage(liu::shader_type type) {
   return VK_SHADER_STAGE_ALL;
 }
 
-std::pair<std::map<std::string, std::uint32_t>, std::map<std::string, std::uint32_t>>
-build_indices(const std::vector<std::uint8_t> &byte_code) {
-  std::map<std::string, std::uint32_t> attribute_indices, uniform_indices;
-  SpvReflectResult result;
-
-  spv_reflect::ShaderModule module(byte_code);
-  assert_log(module.GetResult() == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
-
-  if (module.GetShaderStage() == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT) {
-    std::uint32_t attribute_count;
-    module.EnumerateInputVariables(&attribute_count, nullptr);
-    std::vector<SpvReflectInterfaceVariable *> attribute_bindings(attribute_count);
-    result = module.EnumerateInputVariables(&attribute_count, attribute_bindings.data());
-    assert_log(result == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
-
-    for (const auto input : attribute_bindings) {
-      const auto location = input->location;
-      const auto name = input->name;
-
-      attribute_indices[name] = location;
-    }
+VkFormat get_vk_format(const liu::input_format &format) {
+  switch (format) {
+  case liu::input_format::UINT_X32:
+    return VK_FORMAT_R32_UINT;
+  case liu::input_format::SINT_X32:
+    return VK_FORMAT_R32_SINT;
+  case liu::input_format::FLOAT_X32:
+    return VK_FORMAT_R32_SFLOAT;
+  case liu::input_format::UINT_X32Y32:
+    return VK_FORMAT_R32G32_UINT;
+  case liu::input_format::SINT_X32Y32:
+    return VK_FORMAT_R32G32_SINT;
+  case liu::input_format::FLOAT_X32Y32:
+    return VK_FORMAT_R32G32_SFLOAT;
+  case liu::input_format::UINT_X32Y32Z32:
+    return VK_FORMAT_R32G32B32_UINT;
+  case liu::input_format::SINT_X32Y32Z32:
+    return VK_FORMAT_R32G32B32_SINT;
+  case liu::input_format::FLOAT_X32Y32Z32:
+    return VK_FORMAT_R32G32B32_SFLOAT;
+  case liu::input_format::UINT_X32Y32Z32W32:
+    return VK_FORMAT_R32G32B32A32_UINT;
+  case liu::input_format::SINT_X32Y32Z32W32:
+    return VK_FORMAT_R32G32B32A32_SINT;
+  case liu::input_format::FLOAT_X32Y32Z32W32:
+    return VK_FORMAT_R32G32B32A32_SFLOAT;
+  case liu::input_format::UINT_X64:
+    return VK_FORMAT_R64_UINT;
+  case liu::input_format::SINT_X64:
+    return VK_FORMAT_R64_SINT;
+  case liu::input_format::FLOAT_X64:
+    return VK_FORMAT_R64_SFLOAT;
+  case liu::input_format::UINT_X64Y64:
+    return VK_FORMAT_R64G64_UINT;
+  case liu::input_format::SINT_X64Y64:
+    return VK_FORMAT_R64G64_SINT;
+  case liu::input_format::FLOAT_X64Y64:
+    return VK_FORMAT_R64G64_SFLOAT;
+  case liu::input_format::UINT_X64Y64Z64:
+    return VK_FORMAT_R64G64B64_UINT;
+  case liu::input_format::SINT_X64Y64Z64:
+    return VK_FORMAT_R64G64B64_SINT;
+  case liu::input_format::FLOAT_X64Y64Z64:
+    return VK_FORMAT_R64G64B64_SFLOAT;
+  case liu::input_format::UINT_X64Y64Z64W64:
+    return VK_FORMAT_R64G64B64A64_UINT;
+  case liu::input_format::SINT_X64Y64Z64W64:
+    return VK_FORMAT_R64G64B64A64_SINT;
+  case liu::input_format::FLOAT_X64Y64Z64W64:
+    return VK_FORMAT_R64G64B64A64_SFLOAT;
   }
-
-  std::uint32_t uniform_count;
-  module.EnumerateDescriptorBindings(&uniform_count, nullptr);
-  std::vector<SpvReflectDescriptorBinding *> uniform_bindings(uniform_count);
-  result = module.EnumerateDescriptorBindings(&uniform_count, uniform_bindings.data());
-  assert_log(result == SPV_REFLECT_RESULT_SUCCESS, "SPIR-V reflection load failed.");
-
-  for (const auto binding : uniform_bindings) {
-    const auto location = binding->binding;
-    const auto name = binding->name;
-
-    uniform_indices[name] = location;
-  }
-
-  return std::make_pair(attribute_indices, uniform_indices);
+  return VK_FORMAT_UNDEFINED;
 }
 
-liu::shader::shader(const liu::base_application_t &app, const std::string &name) : app(app), name(name) {
+liu::shader::shader(const liu::base_application_t &app, const std::string &name, const liu::input_description &input)
+    : app(app), name(name) {
   VkResult result;
   std::vector<VkShaderModule> shader_modules;
   std::vector<VkPipelineShaderStageCreateInfo> shader_stages_info;
@@ -100,23 +115,28 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
                                                         .pName = "main",
                                                         .pSpecializationInfo = nullptr};
       shader_stages_info.emplace_back(shader_stage_info);
-
-      auto [attribute, uniform] = build_indices(real_file);
-      attribute_indices.insert(attribute.begin(), attribute.end());
-      uniform_indices.insert(uniform.begin(), uniform.end());
     }
   }
 
-  VkPipelineVertexInputStateCreateInfo vertex_input_info{.sType =
-                                                             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-                                                         .pNext = nullptr,
-                                                         .flags = 0,
-                                                         .vertexBindingDescriptionCount = 0,
-                                                         .pVertexBindingDescriptions = nullptr,
-                                                         .vertexAttributeDescriptionCount = 0,
-                                                         .pVertexAttributeDescriptions = nullptr};
+  VkVertexInputBindingDescription input_binding_info{
+      .binding = 0, .stride = static_cast<uint32_t>(input.stride), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
+  std::vector<VkVertexInputAttributeDescription> input_attribute_info;
+  for (auto &binding : input.bindings) {
+    input_attribute_info.push_back({.location = binding.location,
+                                    .binding = 0,
+                                    .format = get_vk_format(binding.format),
+                                    .offset = static_cast<uint32_t>(binding.offset)});
+  }
+  VkPipelineVertexInputStateCreateInfo vertex_input_info{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .vertexBindingDescriptionCount = 1,
+      .pVertexBindingDescriptions = &input_binding_info,
+      .vertexAttributeDescriptionCount = static_cast<uint32_t>(input_attribute_info.size()),
+      .pVertexAttributeDescriptions = input_attribute_info.data()};
 
-  VkPipelineInputAssemblyStateCreateInfo input_assemply_info{
+  VkPipelineInputAssemblyStateCreateInfo input_assembly_info{
       .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
@@ -211,7 +231,7 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name)
                                              .stageCount = static_cast<std::uint32_t>(shader_stages_info.size()),
                                              .pStages = shader_stages_info.data(),
                                              .pVertexInputState = &vertex_input_info,
-                                             .pInputAssemblyState = &input_assemply_info,
+                                             .pInputAssemblyState = &input_assembly_info,
                                              .pTessellationState = nullptr,
                                              .pViewportState = &viewport_info,
                                              .pRasterizationState = &rasterization_info,
@@ -245,45 +265,27 @@ void liu::shader::apply(std::function<void()> &callback) const {
   inactive();
 }
 
-std::optional<std::int32_t> liu::shader::get_attribute_index(const std::string &attribute_name) const {
-  try {
-    return attribute_indices.at(attribute_name);
-  } catch (const std::out_of_range &e) {
-    warn("Requesting non-existing attribute {} in shader {}", attribute_name, name);
-    return std::nullopt;
-  }
-}
-
-std::optional<std::int32_t> liu::shader::get_uniform_index(const std::string &uniform_name) const {
-  try {
-    return uniform_indices.at(uniform_name);
-  } catch (const std::out_of_range &e) {
-    warn("Requesting non-existing uniform {} in shader {}", uniform_name, name);
-    return std::nullopt;
-  }
-}
-
 void liu::shader::active() const {
   for (size_t i = 0; i < app.get_vulkan_context().command_buffers.size(); i++) {
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    if (vkBeginCommandBuffer(app.get_vulkan_context().command_buffers[i], &beginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(app.get_vulkan_context().command_buffers[i], &begin_info) != VK_SUCCESS) {
       throw std::runtime_error("failed to begin recording command buffer!");
     }
 
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = app.get_vulkan_context().render_pass;
-    renderPassInfo.framebuffer = app.get_vulkan_context().swap_chain_frame_buffers[i];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = app.get_vulkan_context().swap_chain_extent;
+    VkRenderPassBeginInfo render_pass_info{};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = app.get_vulkan_context().render_pass;
+    render_pass_info.framebuffer = app.get_vulkan_context().swap_chain_frame_buffers[i];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent = app.get_vulkan_context().swap_chain_extent;
 
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    VkClearValue clear_color = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+    render_pass_info.clearValueCount = 1;
+    render_pass_info.pClearValues = &clear_color;
 
-    vkCmdBeginRenderPass(app.get_vulkan_context().command_buffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(app.get_vulkan_context().command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(app.get_vulkan_context().command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 

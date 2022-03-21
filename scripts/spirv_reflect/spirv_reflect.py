@@ -9,6 +9,9 @@ class SpvReflectInterfaceVariable:
     def __init__(self, interface_variable_ptr):
         self._interface_variable_ptr = interface_variable_ptr
 
+    def get_location(self) -> int:
+        return self._interface_variable_ptr.location
+
     def get_format(self) -> SpvReflectFormat:
         return SpvReflectFormat(self._interface_variable_ptr.format)
 
@@ -19,10 +22,10 @@ class SpvReflectInterfaceVariable:
 class SpvReflectShaderModule:
     def __init__(self, path: str | PathLike[AnyStr]):
         with open(path, "rb") as file:
-            data = file.read()
+            self.data = file.read()
 
         module = ffi.new("SpvReflectShaderModule*")
-        result = SpvReflectResult(lib.spvReflectCreateShaderModule(len(data), data, module))
+        result = SpvReflectResult(lib.spvReflectCreateShaderModule(len(self.data), self.data, module))
         if result != SpvReflectResult.SPV_REFLECT_RESULT_SUCCESS:
             raise Exception(
                 f"SpvReflectCreateShaderModule failed with error {result}"
@@ -40,3 +43,12 @@ class SpvReflectShaderModule:
         variables = ffi.new("SpvReflectInterfaceVariable*[]", input_count[0])
         lib.spvReflectEnumerateInputVariables(self._module, input_count, variables)
         return [SpvReflectInterfaceVariable(v) for v in variables]
+
+    def get_output_variables(self) -> List[SpvReflectInterfaceVariable]:
+        input_count = ffi.new("uint32_t*")
+        lib.spvReflectEnumerateOutputVariables(self._module, input_count, ffi.NULL)
+        variables = ffi.new("SpvReflectInterfaceVariable*[]", input_count[0])
+        lib.spvReflectEnumerateOutputVariables(self._module, input_count, variables)
+        return [SpvReflectInterfaceVariable(v) for v in variables]
+
+    # def get_

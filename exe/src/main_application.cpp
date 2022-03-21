@@ -1,6 +1,13 @@
+#include <default_shader_inputs.hpp>
 #include <main_application.hpp>
 
-#include "../include/main_application.hpp"
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#elif defined(__GNUC__) || defined(__GNUG__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 
 void main_callback_t::key_callback(GLFWwindow *window, int key, int scan_code, int action, int mode) {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -20,11 +27,17 @@ void main_callback_t::scroll_callback(GLFWwindow *window, double x_offset, doubl
 
 void main_callback_t::drop_callback(GLFWwindow *window, int count, const char **paths) {}
 
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__) || defined(__GNUG__)
+#pragma GCC diagnostic pop
+#endif
+
 main_application::main_application(const std::filesystem::path &assets_path)
     : application(assets_path, 800, 600, std::nullopt, "Main Application", main_callback_t()),
-      default_shader(*this, "default") {}
+      default_shader(*this, "default", default_shader_inputs::get_input_description()) {}
 
 void main_application::main_loop() {
-//  default_shader.active();
-//  default_shader.inactive();
+  //  default_shader.active();
+  //  default_shader.inactive();
 }

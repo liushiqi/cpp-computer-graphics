@@ -14,9 +14,12 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(external)
 
-find_package(glfw3 3.3 REQUIRED FATAL_ERROR)
+set(GRAPHICS_BASE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(glfw3 3.3 REQUIRED FATAL_ERROR)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(AddHelperFunctions)
 include(AddShader)
 
@@ -47,11 +50,12 @@ target_link_libraries(liu_graphics PUBLIC
     glm::glm
     assimp::assimp
     spdlog::spdlog
-    spirv-reflect-static
     ${CMAKE_DL_LIBS})
 target_precompile_headers(liu_graphics PUBLIC ${LIB_GRAPHICS_HEADERS})
 
 enable_warning(liu_graphics)
+
+generate_spirv_reflect_binding()
 
 add_subdirectory(exe)
 
