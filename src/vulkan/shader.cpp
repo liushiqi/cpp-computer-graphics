@@ -86,7 +86,7 @@ VkFormat get_vk_format(const liu::input_format &format) {
   return VK_FORMAT_UNDEFINED;
 }
 
-liu::shader::shader(const liu::base_application_t &app, const std::string &name, const liu::input_description &input)
+liu::shader::shader(const liu::base_application_t &app, const std::string &name, const liu::shader_input &input)
     : app(app), name(name) {
   VkResult result;
   std::vector<VkShaderModule> shader_modules;

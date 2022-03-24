@@ -31,6 +31,21 @@ enum class input_format : std::uint32_t {
   FLOAT_X64Y64Z64W64
 };
 
+enum class uniform_type : std::uint32_t {
+  SAMPLER = 0,
+  COMBINED_IMAGE_SAMPLER = 1,
+  SAMPLED_IMAGE = 2,
+  STORAGE_IMAGE = 3,
+  UNIFORM_TEXEL_BUFFER = 4,
+  STORAGE_TEXEL_BUFFER = 5,
+  UNIFORM_BUFFER = 6,
+  STORAGE_BUFFER = 7,
+  UNIFORM_BUFFER_DYNAMIC = 8,
+  STORAGE_BUFFER_DYNAMIC = 9,
+  INPUT_ATTACHMENT = 10,
+  ACCELERATION_STRUCTURE_KHR = 1000150000
+};
+
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnull-pointer-subtraction"
@@ -45,7 +60,18 @@ constexpr size_t offset_of(U T::*member) {
 #pragma clang diagnostic pop
 #endif
 
-struct input_description {
+struct shader_input {
+  struct binding_description {
+    std::uint32_t location;
+    input_format format;
+    std::size_t offset;
+  };
+
+  std::size_t stride;
+  std::vector<binding_description> bindings;
+};
+
+struct shader_uniform {
   struct binding_description {
     std::uint32_t location;
     input_format format;

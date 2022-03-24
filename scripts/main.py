@@ -12,16 +12,19 @@ if __name__ == '__main__':
     shader_name = sys.argv[4]
     modules = []
     input_variables = []
+    descriptor_bindings = []
     for module_path in glob.glob(shader_path + "/" + shader_name + ".*.spv"):
         module = SpvReflectShaderModule(module_path)
         modules.append(module)
         if module.get_shader_stage() == SpvReflectShaderStageFlagBits.SPV_REFLECT_SHADER_STAGE_VERTEX_BIT:
             input_variables += module.get_input_variables()
+        descriptor_bindings += module.get_descriptor()
 
     with open(sys.argv[1], 'w+') as output_header, open(sys.argv[2], 'w+') as output_source:
         output_header.write("""#pragma once
 
 #include <cstdint>
+#include <shader_input.hpp>
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -42,13 +45,18 @@ if __name__ == '__main__':
         for variable in input_variables:
             output_header.write(f"  {variable.get_format().c_type} {variable.get_name()};\n")
         output_header.write("\n")
-        output_header.write("  static liu::input_description get_input_description();\n")
+        output_header.write("  static liu::shader_input get_input_description();\n")
+        output_header.write("};\n")
+
+        output_header.write(f"struct {shader_name}_shader_uniforms final {{\n")
+        for uniform in descriptor_bindings:
+            print(f"{uniform.get_name()} {uniform.tmp()}\n")
         output_header.write("};\n")
 
         output_source.write(f"#include <{shader_name}_shader_inputs.hpp>\n\n")
         output_source.write(
-            f"liu::input_description {shader_name}_shader_inputs::get_input_description() {{\n")
-        output_source.write("  liu::input_description description;\n")
+            f"liu::shader_input {shader_name}_shader_inputs::get_input_description() {{\n")
+        output_source.write("  liu::shader_input description;\n")
         output_source.write(f"  description.stride = sizeof(struct {shader_name}_shader_inputs);\n")
         for variable in input_variables:
             output_source.write(

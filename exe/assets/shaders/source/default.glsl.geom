@@ -6,15 +6,15 @@
 layout(triangles) in;
 layout(line_strip, max_vertices=6) out;
 
-in dvec3 pos_result[3];
-in dvec3 norm_result[3];
-in dvec2 coord_result[3];
+in vec3 pos_result[3];
+in vec3 norm_result[3];
+in vec2 coord_result[3];
 
 layout(binding=1) uniform rotation_uniform { float rotation; } rotation;
 
-out dvec3 pos_result_geom;
-out dvec3 norm_result_geom;
-out dvec2 coord_result_geom;
+out vec3 pos_result_geom;
+out vec3 norm_result_geom;
+out vec2 coord_result_geom;
 
 void GenerateLine(int index) {
     gl_Position = gl_in[index].gl_Position;

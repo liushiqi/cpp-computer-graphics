@@ -1,6 +1,6 @@
 #pragma once
 
-#include "input_description.hpp"
+#include "shader_input.hpp"
 #include <application.hpp>
 #include <filesystem>
 #include <functional>
@@ -64,7 +64,7 @@ private:
   std::string name;
 
 public:
-  shader(const liu::base_application_t &app, const std::string &name, const liu::input_description &input);
+  shader(const liu::base_application_t &app, const std::string &name, const liu::shader_input &input);
 
   ~shader();
 
