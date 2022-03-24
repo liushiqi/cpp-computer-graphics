@@ -1,12 +1,12 @@
 #pragma once
 
-#include "shader_input.hpp"
 #include <application.hpp>
 #include <filesystem>
 #include <functional>
 #include <glad/vulkan.h>
 #include <map>
 #include <optional>
+#include <shader_input.hpp>
 #include <string>
 #include <vector>
 
@@ -15,7 +15,7 @@ enum class shader_group : std::uint8_t {
 
 };
 
-enum class shader_type : std::uint8_t {
+enum class shader_type : std::uint32_t {
   VERTEX,
   TESSELLATION_CONTROL,
   TESSELLATION_EVALUATION,
@@ -57,6 +57,7 @@ private:
 #ifdef VULKAN_ENABLED
   VkPipelineLayout pipeline_layout = nullptr;
   VkPipeline graphics_pipeline = nullptr;
+  VkDescriptorSetLayout descriptor_set_layout = nullptr;
 #else
   std::uint32_t program_id{};
 #endif
@@ -64,7 +65,8 @@ private:
   std::string name;
 
 public:
-  shader(const liu::base_application_t &app, const std::string &name, const liu::shader_input &input);
+  shader(const liu::base_application_t &app, const std::string &name, const liu::shader_input &input,
+         const liu::shader_uniform &uniform);
 
   ~shader();
 

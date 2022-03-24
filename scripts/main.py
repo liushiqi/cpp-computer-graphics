@@ -18,7 +18,13 @@ if __name__ == '__main__':
         modules.append(module)
         if module.get_shader_stage() == SpvReflectShaderStageFlagBits.SPV_REFLECT_SHADER_STAGE_VERTEX_BIT:
             input_variables += module.get_input_variables()
-        descriptor_bindings += module.get_descriptor()
+        tmp_descriptor_bindings = module.get_descriptor()
+        for binding in tmp_descriptor_bindings:
+            if len([d for d in descriptor_bindings if d.get_name() == binding.get_name()]) == 0:
+                descriptor_bindings.append(binding)
+            else:
+                filter(lambda x: x.get_name() == binding.get_name(), descriptor_bindings).__next__().stage.append(
+                    binding.stage)
 
     with open(sys.argv[1], 'w+') as output_header, open(sys.argv[2], 'w+') as output_source:
         output_header.write("""#pragma once
@@ -46,11 +52,10 @@ if __name__ == '__main__':
             output_header.write(f"  {variable.get_format().c_type} {variable.get_name()};\n")
         output_header.write("\n")
         output_header.write("  static liu::shader_input get_input_description();\n")
-        output_header.write("};\n")
+        output_header.write("};\n\n")
 
         output_header.write(f"struct {shader_name}_shader_uniforms final {{\n")
-        for uniform in descriptor_bindings:
-            print(f"{uniform.get_name()} {uniform.tmp()}\n")
+        output_header.write("  static liu::shader_uniform get_uniform_description();\n")
         output_header.write("};\n")
 
         output_source.write(f"#include <{shader_name}_shader_inputs.hpp>\n\n")
@@ -60,10 +65,25 @@ if __name__ == '__main__':
         output_source.write(f"  description.stride = sizeof(struct {shader_name}_shader_inputs);\n")
         for variable in input_variables:
             output_source.write(
-                f"  description.bindings.emplace_back(liu::input_description::binding_description{{\n"
+                f"  description.bindings.emplace_back(liu::shader_input::binding_description{{\n"
                 f"    .location = {variable.get_location()},\n"
                 f"    .format = {variable.get_format().cpp_name},\n"
                 f"    .offset = liu::offset_of(&{shader_name}_shader_inputs::{variable.get_name()})\n"
+                f"  }});\n")
+        output_source.write("  return description;\n")
+        output_source.write("}\n\n")
+
+        output_source.write(
+            f"liu::shader_uniform {shader_name}_shader_uniforms::get_uniform_description() {{\n")
+        output_source.write("  liu::shader_uniform description;\n")
+        output_source.write(f"  description.count = {len(descriptor_bindings)};\n")
+        for descriptor in descriptor_bindings:
+            output_source.write(
+                f"  description.bindings.emplace_back(liu::shader_uniform::binding_description{{\n"
+                f"    .binding = {descriptor.get_binding()},\n"
+                f"    .type = liu::uniform_type::{descriptor.get_descriptor_type().name},\n"
+                f"    .count = 1,\n"
+                f"    .shaders = {{{', '.join([name.cpp_name for name in descriptor.stage])}}}\n"
                 f"  }});\n")
         output_source.write("  return description;\n")
         output_source.write("}\n")

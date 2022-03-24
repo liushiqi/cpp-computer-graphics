@@ -2,7 +2,7 @@ from os import PathLike
 from typing import AnyStr, List
 
 from .build.spirv_reflect_cffi import ffi, lib
-from .spirv_enums import SpvReflectFormat, SpvReflectResult, SpvReflectShaderStageFlagBits
+from .spirv_enums import SpvReflectFormat, SpvReflectResult, SpvReflectShaderStageFlagBits, SpvReflectDescriptorType
 
 
 class SpvReflectInterfaceVariable:
@@ -20,8 +20,9 @@ class SpvReflectInterfaceVariable:
 
 
 class SpvReflectDescriptorBinding:
-    def __init__(self, descriptor_binding_ptr):
+    def __init__(self, descriptor_binding_ptr, stage):
         self._descriptor_binding_ptr = descriptor_binding_ptr
+        self.stage = [stage]
 
     def get_name(self) -> AnyStr:
         return ffi.string(self._descriptor_binding_ptr.name).decode("utf-8")
@@ -29,14 +30,11 @@ class SpvReflectDescriptorBinding:
     def get_binding(self) -> int:
         return self._descriptor_binding_ptr.binding
 
-    def get_descriptor_type(self) -> int:
-        return self._descriptor_binding_ptr.descriptor_type
+    def get_descriptor_type(self) -> SpvReflectDescriptorType:
+        return SpvReflectDescriptorType(self._descriptor_binding_ptr.descriptor_type)
 
     def get_count(self) -> int:
         return self._descriptor_binding_ptr.count
-
-    def tmp(self) -> int:
-        return ffi.string(self._descriptor_binding_ptr.type_description.type_name).decode("utf-8")
 
 
 class SpvReflectShaderModule:
@@ -76,4 +74,4 @@ class SpvReflectShaderModule:
         lib.spvReflectEnumerateDescriptorBindings(self._module, input_count, ffi.NULL)
         bindings = ffi.new("SpvReflectDescriptorBinding*[]", input_count[0])
         lib.spvReflectEnumerateDescriptorBindings(self._module, input_count, bindings)
-        return [SpvReflectDescriptorBinding(b) for b in bindings]
+        return [SpvReflectDescriptorBinding(b, self.get_shader_stage()) for b in bindings]

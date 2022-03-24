@@ -35,7 +35,8 @@ void main_callback_t::drop_callback(GLFWwindow *window, int count, const char **
 
 main_application::main_application(const std::filesystem::path &assets_path)
     : application(assets_path, 800, 600, std::nullopt, "Main Application", main_callback_t()),
-      default_shader(*this, "default", default_shader_inputs::get_input_description()) {}
+      default_shader(*this, "default", default_shader_inputs::get_input_description(),
+                     default_shader_uniforms::get_uniform_description()) {}
 
 void main_application::main_loop() {
   //  default_shader.active();

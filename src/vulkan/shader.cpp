@@ -86,7 +86,38 @@ VkFormat get_vk_format(const liu::input_format &format) {
   return VK_FORMAT_UNDEFINED;
 }
 
-liu::shader::shader(const liu::base_application_t &app, const std::string &name, const liu::shader_input &input)
+VkDescriptorType get_vk_uniform_type(const liu::uniform_type &type) {
+  switch (type) {
+  case liu::uniform_type::SAMPLER:
+    return VK_DESCRIPTOR_TYPE_SAMPLER;
+  case liu::uniform_type::COMBINED_IMAGE_SAMPLER:
+    return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  case liu::uniform_type::SAMPLED_IMAGE:
+    return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+  case liu::uniform_type::STORAGE_IMAGE:
+    return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+  case liu::uniform_type::UNIFORM_TEXEL_BUFFER:
+    return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+  case liu::uniform_type::STORAGE_TEXEL_BUFFER:
+    return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+  case liu::uniform_type::UNIFORM_BUFFER:
+    return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  case liu::uniform_type::STORAGE_BUFFER:
+    return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+  case liu::uniform_type::UNIFORM_BUFFER_DYNAMIC:
+    return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+  case liu::uniform_type::STORAGE_BUFFER_DYNAMIC:
+    return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+  case liu::uniform_type::INPUT_ATTACHMENT:
+    return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+  case liu::uniform_type::ACCELERATION_STRUCTURE_KHR:
+    return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+  }
+  return VK_DESCRIPTOR_TYPE_SAMPLER;
+}
+
+liu::shader::shader(const liu::base_application_t &app, const std::string &name, const liu::shader_input &input,
+                    const liu::shader_uniform &uniform)
     : app(app), name(name) {
   VkResult result;
   std::vector<VkShaderModule> shader_modules;
@@ -215,11 +246,31 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name,
                                                       .dynamicStateCount = 2,
                                                       .pDynamicStates = dynamic_states};
 
+  std::vector<VkDescriptorSetLayoutBinding> uniform_binding_info;
+  for (auto &binding : uniform.bindings) {
+    VkShaderStageFlags stage_flags = 0;
+    for (auto &stage : binding.shaders) {
+      stage_flags |= shader_type_to_stage(stage);
+    }
+    uniform_binding_info.push_back({.binding = binding.binding,
+                                    .descriptorType = get_vk_uniform_type(binding.type),
+                                    .descriptorCount = static_cast<uint32_t>(binding.count),
+                                    .stageFlags = stage_flags,
+                                    .pImmutableSamplers = nullptr});
+  }
+  VkDescriptorSetLayoutCreateInfo descriptor_layout_info{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+                                                         .pNext = nullptr,
+                                                         .flags = 0,
+                                                         .bindingCount = static_cast<uint32_t>(uniform.count),
+                                                         .pBindings = uniform_binding_info.data()};
+  result = vkCreateDescriptorSetLayout(app.get_vulkan_context().device, &descriptor_layout_info, nullptr,
+                                       &descriptor_set_layout);
+  assert_log(result == VK_SUCCESS, "Failed to create descriptor set layout with error {}", vk_error_to_string(result));
   VkPipelineLayoutCreateInfo pipeline_layout_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                                                   .pNext = nullptr,
                                                   .flags = 0,
-                                                  .setLayoutCount = 0,
-                                                  .pSetLayouts = nullptr,
+                                                  .setLayoutCount = 1,
+                                                  .pSetLayouts = &descriptor_set_layout,
                                                   .pushConstantRangeCount = 0,
                                                   .pPushConstantRanges = nullptr};
   result = vkCreatePipelineLayout(app.get_vulkan_context().device, &pipeline_layout_info, nullptr, &pipeline_layout);
@@ -257,6 +308,7 @@ liu::shader::shader(const liu::base_application_t &app, const std::string &name,
 liu::shader::~shader() {
   vkDestroyPipeline(app.get_vulkan_context().device, graphics_pipeline, nullptr);
   vkDestroyPipelineLayout(app.get_vulkan_context().device, pipeline_layout, nullptr);
+  vkDestroyDescriptorSetLayout(app.get_vulkan_context().device, descriptor_set_layout, nullptr);
 }
 
 void liu::shader::apply(std::function<void()> &callback) const {

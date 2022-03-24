@@ -71,14 +71,17 @@ struct shader_input {
   std::vector<binding_description> bindings;
 };
 
+enum class shader_type : uint32_t;
+
 struct shader_uniform {
   struct binding_description {
-    std::uint32_t location;
-    input_format format;
-    std::size_t offset;
+    std::uint32_t binding;
+    uniform_type type;
+    std::size_t count;
+    std::vector<shader_type> shaders;
   };
 
-  std::size_t stride;
+  std::size_t count;
   std::vector<binding_description> bindings;
 };
 } // namespace liu
